@@ -1,0 +1,54 @@
+<h2>Input Permintaan IDeb - Badan Usaha</h2>
+<form id="ideb-request-form-badan-usaha">
+    <div class="mb-3">
+        <label for="nomor_referensi_pengguna_badan_usaha" class="form-label">Nomor Referensi Pengguna</label>
+        <input type="text" class="form-control" id="nomor_referensi_pengguna_badan_usaha" required>
+    </div>
+    <div class="mb-3">
+        <label for="tujuan_penggunaan_badan_usaha" class="form-label">Tujuan Penggunaan</label>
+        <input type="text" class="form-control" id="tujuan_penggunaan_badan_usaha" required>
+    </div>
+    <div class="mb-3">
+        <label for="jenis_identitas_badan_usaha" class="form-label">Jenis Identitas Badan Usaha</label>
+        <select class="form-select" id="jenis_identitas_badan_usaha" required>
+            <option value="1">NPWP</option>
+            <option value="2">SIUP</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="nomor_identitas_badan_usaha" class="form-label">Nomor Identitas Badan Usaha</label>
+        <input type="text" class="form-control" id="nomor_identitas_badan_usaha" required>
+    </div>
+    <div class="mb-3">
+        <label for="nama_badan_usaha" class="form-label">Nama Badan Usaha</label>
+        <input type="text" class="form-control" id="nama_badan_usaha" required>
+    </div>
+    <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" id="permintaan_fasilitas_outstanding_badan_usaha">
+        <label class="form-check-label" for="permintaan_fasilitas_outstanding_badan_usaha">Permintaan Fasilitas Outstanding</label>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Search Type</label>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="search_type_badan_usaha" id="search_internal_badan_usaha" value="internal" checked>
+            <label class="form-check-label" for="search_internal_badan_usaha">
+                Internal Database
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="search_type_badan_usaha" id="search_live_badan_usaha" value="live">
+            <label class="form-check-label" for="search_live_badan_usaha">
+                Live SLIK OJK
+            </label>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+
+<script>
+    document.getElementById('ideb-request-form-badan-usaha').addEventListener('submit', function(event) {
+        event.preventDefault();
+        // Handle form submission, send data to backend
+        alert('Form Badan Usaha submitted!');
+    });
+</script>
