@@ -1,47 +1,66 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"time"
+	
 
-	_ "github.com/mattn/go-sqlite3"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
-var db *sql.DB
+var DB *gorm.DB
 var frontendPath string
 
 type Request struct {
-	ID                           int       `json:"id"`
+	gorm.Model
 	NomorReferensiPengguna       string    `json:"nomor_referensi_pengguna"`
 	TujuanPenggunaan             string    `json:"tujuan_penggunaan"`
 	JenisIdentitas               string    `json:"jenis_identitas"`
 	NomorIdentitas               string    `json:"nomor_identitas"`
 	PermintaanFasilitasOutstanding bool      `json:"permintaan_fasilitas_outstanding"`
 	SearchType                   string    `json:"search_type"`
-	StatusAksi                   string    `json:"status_aksi"`
-	CreatedAt                    time.Time `json:"created_at"`
+	StatusAksi                   string    `json:"status_aksi" gorm:"default:'Dalam Proses'"`
+}
+
+func (Request) TableName() string {
+	return "getDebtorExactIndividual"
+}
+
+type CorporateRequest struct {
+	gorm.Model
+	NomorReferensiPengguna       string    `json:"nomor_referensi_pengguna"`
+	TujuanPenggunaan             string    `json:"tujuan_penggunaan"`
+	NomorIdentitas               string    `json:"nomor_identitas"`
+	PermintaanFasilitasOutstanding bool      `json:"permintaan_fasilitas_outstanding"`
+	SearchType                   string    `json:"search_type"`
+	StatusAksi                   string    `json:"status_aksi" gorm:"default:'Dalam Proses'"`
+}
+
+func (CorporateRequest) TableName() string {
+	return "getDebtorExactCorporate"
 }
 
 func main() {
 	var err error
-	db, err = sql.Open("sqlite3", "./ideb.db")
+	DB, err = gorm.Open(sqlite.Open("./ideb.db"), &gorm.Config{})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("failed to connect database", err)
 	}
-	defer db.Close()
 
-	createTable()
+	// Migrate the schema
+	DB.AutoMigrate(&Request{}, &CorporateRequest{})
 
 	// Serve static files from the "frontend" directory
 	fs := http.FileServer(http.Dir("../frontend"))
 	http.Handle("/", fs)
 
 	http.HandleFunc("/api/login", loginHandler)
-	http.HandleFunc("/api/requests", requestsHandler)
+	http.HandleFunc("/api/requests", createRequestHandler)
+	http.HandleFunc("/api/getDebtorExactIndividual", getDebtorExactIndividualHandler)
+	http.HandleFunc("/api/getDebtorExactCorporate", getDebtorExactCorporateHandler)
 
 	log.Println("Server starting on port 8080...")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
@@ -49,23 +68,7 @@ func main() {
 	}
 }
 
-func createTable() {
-	statement, err := db.Prepare(`CREATE TABLE IF NOT EXISTS requests (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nomor_referensi_pengguna TEXT NOT NULL,
-        tujuan_penggunaan TEXT NOT NULL,
-        jenis_identitas TEXT NOT NULL,
-        nomor_identitas TEXT NOT NULL,
-        permintaan_fasilitas_outstanding BOOLEAN NOT NULL,
-        search_type TEXT NOT NULL,
-        status_aksi TEXT NOT NULL DEFAULT 'Dalam Proses',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )`)
-	if err != nil {
-		log.Fatal(err)
-	}
-	statement.Exec()
-}
+
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	// Dummy login handler
@@ -73,9 +76,9 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, `{"status":"success"}`)
 }
 
-func requestsHandler(w http.ResponseWriter, r *http.Request) {
+func getDebtorExactIndividualHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-    w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+    w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
     w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 
 	if r.Method == "OPTIONS" {
@@ -83,12 +86,43 @@ func requestsHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-	switch r.Method {
-	case "GET":
-		getRequests(w, r)
-	case "POST":
+	if r.Method == "GET" {
+		getRequests(w, r, "getDebtorExactIndividual")
+	} else {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func getDebtorExactCorporateHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+    w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+
+	if r.Method == "OPTIONS" {
+        w.WriteHeader(http.StatusOK)
+        return
+    }
+
+	if r.Method == "GET" {
+		getRequests(w, r, "getDebtorExactCorporate")
+	} else {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func createRequestHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+    w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+
+	if r.Method == "OPTIONS" {
+        w.WriteHeader(http.StatusOK)
+        return
+    }
+
+	if r.Method == "POST" {
 		createRequest(w, r)
-	default:
+	} else {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
@@ -100,16 +134,8 @@ func createRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	statement, err := db.Prepare(`INSERT INTO requests 
-		(nomor_referensi_pengguna, tujuan_penggunaan, jenis_identitas, nomor_identitas, permintaan_fasilitas_outstanding, search_type) 
-		VALUES (?, ?, ?, ?, ?, ?)`)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	_, err = statement.Exec(req.NomorReferensiPengguna, req.TujuanPenggunaan, req.JenisIdentitas, req.NomorIdentitas, req.PermintaanFasilitasOutstanding, req.SearchType)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if result := DB.Create(&req); result.Error != nil {
+		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -117,22 +143,11 @@ func createRequest(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(req)
 }
 
-func getRequests(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT id, nomor_referensi_pengguna, tujuan_penggunaan, jenis_identitas, nomor_identitas, permintaan_fasilitas_outstanding, search_type, status_aksi, created_at FROM requests")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer rows.Close()
-
+func getRequests(w http.ResponseWriter, r *http.Request, tableName string) {
 	var requests []Request
-	for rows.Next() {
-		var req Request
-		if err := rows.Scan(&req.ID, &req.NomorReferensiPengguna, &req.TujuanPenggunaan, &req.JenisIdentitas, &req.NomorIdentitas, &req.PermintaanFasilitasOutstanding, &req.SearchType, &req.StatusAksi, &req.CreatedAt); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		requests = append(requests, req)
+	if result := DB.Table(tableName).Find(&requests); result.Error != nil {
+		http.Error(w, result.Error.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")

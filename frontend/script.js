@@ -78,20 +78,37 @@ function submitIdebRequest() {
 }
 
 function loadRequests(page) {
-    fetch('/api/requests')
+    let apiUrl = '';
+    if (page === 'debitur-individual.html') {
+        apiUrl = '/api/getDebtorExactIndividual';
+    } else if (page === 'badan-usaha.html') {
+        apiUrl = '/api/getDebtorExactCorporate';
+    }
+
+    fetch(apiUrl)
         .then(response => response.json())
         .then(data => {
             const tbody = document.querySelector(`#${page.split('.')[0]} table tbody`);
             if (tbody) {
                 tbody.innerHTML = ''; // Clear existing data
                 data.forEach(req => {
-                    const row = `<tr>
-                        <td>${req.nomor_referensi_pengguna}</td>
-                        <td>${req.tujuan_penggunaan}</td>
-                        <td>${req.jenis_identitas}</td>
-                        <td>${req.nomor_identitas}</td>
-                        <td>${req.status_aksi === 'Dalam Proses' ? 'Dalam Proses' : `<a href="#" onclick="viewDetail(${req.id})">Lihat Detail</a>`}</td>
-                    </tr>`;
+                    let row = '';
+                    if (page === 'debitur-individual.html') {
+                        row = `<tr>
+                            <td>${req.nomor_referensi_pengguna}</td>
+                            <td>${req.tujuan_penggunaan}</td>
+                            <td>${req.jenis_identitas}</td>
+                            <td>${req.nomor_identitas}</td>
+                            <td>${req.status_aksi === 'Dalam Proses' ? 'Dalam Proses' : `<a href="#" onclick="viewDetail(${req.id})">Lihat Detail</a>`}</td>
+                        </tr>`;
+                    } else if (page === 'badan-usaha.html') {
+                        row = `<tr>
+                            <td>${req.nomor_referensi_pengguna}</td>
+                            <td>${req.tujuan_penggunaan}</td>
+                            <td>${req.nomor_identitas}</td>
+                            <td>${req.status_aksi === 'Dalam Proses' ? 'Dalam Proses' : `<a href="#" onclick="viewDetail(${req.id})">Lihat Detail</a>`}</td>
+                        </tr>`;
+                    }
                     tbody.innerHTML += row;
                 });
             }

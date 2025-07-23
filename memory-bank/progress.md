@@ -6,7 +6,7 @@
 - **Backend API (Go):**
     - A basic Go web server is running.
     - Dummy login endpoint (`/api/login`) is functional.
-    - API endpoint (`/api/requests`) for creating and listing requests is implemented and connected to the database.
+    - API endpoint (`/api/requests`) for creating and listing requests is implemented using GORM and connected to the database.
 - **Frontend (HTML/JS/CSS):**
     - A basic user interface with a sidebar and content area is in place.
     - The default landing page after login is now `input-permintaan-badan-usaha.html`.

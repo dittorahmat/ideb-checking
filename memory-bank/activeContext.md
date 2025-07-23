@@ -10,8 +10,8 @@ The immediate next steps are to build the core components of the v0 mockup:
 3.  **Backend API (Go):**
     - Create a basic web server using the `net/http` package.
     - Implement the dummy login endpoint.
-    - Implement the endpoint to receive new IDEB requests and save them to the database.
-    - Implement the endpoint to list all existing requests.
+    - Implement the endpoint to receive new IDEB requests and save them to the database using GORM.
+    - Implement the endpoint to list all existing requests using GORM.
 - **Frontend (HTML/Bootstrap):**
     - The default landing page after login has been changed to `input-permintaan-badan-usaha.html`.
 4.  **Frontend (HTML/Bootstrap):**

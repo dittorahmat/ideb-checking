@@ -3,7 +3,7 @@
 ## 1. System Architecture
 The application follows a simple two-tier client-server architecture:
 - **Frontend:** A web-based user interface built with HTML, JS, and Bootstrap. It is responsible for all user interaction and rendering of data. It communicates with the backend via API calls.
-- **Backend:** A Go application that serves the API. It contains all the business logic, interacts with the SQLite database, and communicates with the external SLIK OJK API.
+- **Backend:** A Go application that serves the API. It contains all the business logic, interacts with the SQLite database using GORM, and communicates with the external SLIK OJK API.
 
 For v1, this architecture will be maintained but deployed as a single unit within a monorepo to Azure App Service.
 
