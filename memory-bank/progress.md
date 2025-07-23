@@ -7,6 +7,7 @@
     - A basic Go web server is running.
     - Dummy login endpoint (`/api/login`) is functional.
     - API endpoint (`/api/requests`) for creating and listing requests is implemented using GORM and connected to the database.
+    - **Refactoring:** `main.go` has been refactored into `database.go` (for DB initialization), `models.go` (for data structures), `handlers.go` (for HTTP handlers), and `routes.go` (for route registration) to improve modularity and maintainability.
 - **Frontend (HTML/JS/CSS):**
     - A basic user interface with a sidebar and content area is in place.
     - The default landing page after login is now `input-permintaan-badan-usaha.html`.

@@ -30,3 +30,26 @@ For v1, this architecture will be maintained but deployed as a single unit withi
 - **Request List Module:** The UI and backend endpoint for displaying the status of all submitted requests.
 - **PDF Generation Service:** A backend service that takes the detailed data of a completed request and formats it into a printable PDF.
 - **SLIK OJK API Client:** A module within the backend responsible for making and managing asynchronous requests to the external OJK API.
+
+## 4. Backend Go Application Structure (Refactored)
+To improve modularity and maintainability, the Go backend application has been refactored into the following files:
+
+- **`main.go`**
+    - **Description:** The entry point of the application. It initializes the database and registers all HTTP routes.
+    - **Key Functions:** `main()`
+
+- **`database.go`**
+    - **Description:** Handles the database connection and schema migration.
+    - **Key Functions:** `InitDatabase()`
+
+- **`models.go`**
+    - **Description:** Defines the data structures (structs) for database models, such as `Request` and `CorporateRequest`.
+    - **Key Functions:** `Request.TableName()`, `CorporateRequest.TableName()`
+
+- **`handlers.go`**
+    - **Description:** Contains the HTTP handler functions for various API endpoints, including login, creating requests, and retrieving requests.
+    - **Key Functions:** `loginHandler()`, `getDebtorExactIndividualHandler()`, `getDebtorExactCorporateHandler()`, `createRequestHandler()`, `createRequest()`, `getRequests()`
+
+- **`routes.go`**
+    - **Description:** Registers all the HTTP routes and associates them with their respective handler functions.
+    - **Key Functions:** `RegisterRoutes()`

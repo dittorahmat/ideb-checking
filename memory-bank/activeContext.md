@@ -12,6 +12,7 @@ The immediate next steps are to build the core components of the v0 mockup:
     - Implement the dummy login endpoint.
     - Implement the endpoint to receive new IDEB requests and save them to the database using GORM.
     - Implement the endpoint to list all existing requests using GORM.
+    - **Refactoring:** `main.go` has been refactored into `database.go` (for DB initialization), `models.go` (for data structures), `handlers.go` (for HTTP handlers), and `routes.go` (for route registration) to improve modularity and maintainability.
 - **Frontend (HTML/Bootstrap):**
     - The default landing page after login has been changed to `input-permintaan-badan-usaha.html`.
 4.  **Frontend (HTML/Bootstrap):**
