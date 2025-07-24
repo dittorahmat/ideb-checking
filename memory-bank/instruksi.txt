@@ -1,0 +1,7 @@
+ok saya sudah dapat sample input dari API SLIK OJK, di @memory-bank/input.json. kita akan mapping satu per satu ke database.
+
+jadi semua request dari API SLIK OJK akan di simpan di database, kita bikin simple saja formatnya, nama tablenya getIdeb, kolomnya: nomor_referensi_pengguna, nomor_identitas & data. dari sample data @memory-bank/input.json tolong masukkan ke table database. mapping value json userReferenceCode ke nomor_referensi , taxId (jika ada banyak, pilih yang pertama saja) ke nomor_identitas, data jsonnya ke data.
+
+jadi alur untuk mockup ini, user melakukan input, dari @frontend/input-permintaan-individual.html dengan memilih search type Internal Database, kemudian user klik tombol Submit. Ini akan simulasi melakukan search di Internal Database. setelah itu, user akan cek di @frontend/badan-usaha.html, data sudah ready, dan user bisa klik Lihat Detail untuk print PDF. sample layout PDF bisa dilihat di @memory-bank/SARIPARI-PERTIWI-ABADI-b.pdf
+
+untuk isi data di @memory-bank/input.json dan @memory-bank/SARIPARI-PERTIWI-ABADI-b.pdf berbeda. untuk generate PDF ini kita akan mengacu ke data @memory-bank/input.json. nanti sama sama kita mapping ke PDF satu per satu. yang penting dilihat dulu sample layout PDF nya.

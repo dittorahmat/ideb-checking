@@ -9,3 +9,11 @@ CREATE TABLE IF NOT EXISTS requests (
     status_aksi TEXT NOT NULL DEFAULT 'Dalam Proses',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS get_idebs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nomor_referensi_pengguna TEXT NOT NULL,
+    nomor_identitas TEXT NOT NULL,
+    data TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

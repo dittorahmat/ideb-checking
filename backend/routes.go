@@ -11,4 +11,5 @@ func RegisterRoutes() {
 	http.HandleFunc("/api/requests", createRequestHandler)
 	http.HandleFunc("/api/getDebtorExactIndividual", getDebtorExactIndividualHandler)
 	http.HandleFunc("/api/getDebtorExactCorporate", getDebtorExactCorporateHandler)
+	http.HandleFunc("/api/generate-pdf", generatePDFHandler)
 }

@@ -11,25 +11,27 @@ For v1, this architecture will be maintained but deployed as a single unit withi
 
 ### New Request Data Flow
 1.  **User** submits the "Input Permintaan IDeb" form on the frontend.
-2.  **Frontend** sends a POST request containing the form data to the Go backend API.
+2.  **Frontend** sends a POST request containing the form data to the Go backend API (`/api/requests`).
 3.  **Backend** receives the request and inserts a new record into the `requests` table in the SQLite database with a status of "Dalam Proses".
-4.  If the request is a "live SLIK OJK" query, the backend initiates an asynchronous call to the external SLIK API in a separate goroutine.
-5.  **Backend** immediately returns a success response to the frontend, confirming the request has been submitted.
+4.  If the request has `search_type` "internal", the backend reads data from `input.json`, extracts `userReferenceCode` and the first `taxId`, and stores this information along with the full JSON content into the `get_idebs` table. The status of the original request is then updated to "Selesai".
+5.  If the request has `search_type` "live", the backend simulates an asynchronous call to the external SLIK OJK API (with a simulated delay). After the simulated call, the corresponding request's status in the `requests` table is updated to "Selesai", and dummy data is stored in the `get_idebs` table.
+6.  **Backend** immediately returns a success response to the frontend, confirming the request has been submitted.
 
 ### Status & Detail View Data Flow
 1.  **User** navigates to the "Daftar Permintaan IDeb" page.
 2.  **Frontend** sends a GET request to the backend API to fetch all requests for the user.
 3.  **Backend** queries the SQLite database and returns the list of requests with their current statuses.
 4.  **Frontend** renders the list.
-5.  When the async OJK job is complete, it updates the corresponding request's status in the database to "Ready" and stores the received data.
-6.  If a user clicks "Lihat Detail" on a "Ready" request, the **Frontend** requests the data from the **Backend**, which then generates a PDF to be displayed or downloaded.
+5.  If a user clicks "Lihat Detail" on a "Selesai" request, the **Frontend** makes a request to the `/api/generate-pdf` endpoint with the request ID.
+6.  The **Backend** retrieves the corresponding data from the `get_idebs` table and generates a PDF report, which is then sent back to the frontend for display or download.
 
 ## 3. Key Components
 - **Authentication:** A dummy login system for v0 that accepts any credentials.
-- **Request Input Module:** The HTML form and corresponding backend endpoint for submitting new IDEB requests.
-- **Request List Module:** The UI and backend endpoint for displaying the status of all submitted requests.
-- **PDF Generation Service:** A backend service that takes the detailed data of a completed request and formats it into a printable PDF.
-- **SLIK OJK API Client:** A module within the backend responsible for making and managing asynchronous requests to the external OJK API.
+- **Request Input Module:** The HTML forms (`input-permintaan-individual.html`, `input-permintaan-badan-usaha.html`) and corresponding backend endpoint (`/api/requests`) for submitting new IDEB requests.
+- **Request List Module:** The UI (`debitur-individual.html`, `badan-usaha.html`) and backend endpoints (`/api/getDebtorExactIndividual`, `/api/getDebtorExactCorporate`) for displaying the status of all submitted requests.
+- **PDF Generation Service:** A backend service (`generatePDFHandler`) that takes detailed data from the `get_idebs` table and formats it into a printable PDF using the `Maroto` library.
+- **SLIK OJK API Client (Simulated):** A module within the backend responsible for simulating asynchronous requests to the external OJK API and storing dummy data in the `get_idebs` table.
+- **Placeholder Pages:** Frontend pages for Dashboard (`dashboard.html`), Parameter (`parameter-user-api.html`, `parameter-valid-token.html`, `parameter-ldap.html`), and User Management (`user-management.html`).
 
 ## 4. Backend Go Application Structure (Refactored)
 To improve modularity and maintainability, the Go backend application has been refactored into the following files:
@@ -43,13 +45,14 @@ To improve modularity and maintainability, the Go backend application has been r
     - **Key Functions:** `InitDatabase()`
 
 - **`models.go`**
-    - **Description:** Defines the data structures (structs) for database models, such as `Request` and `CorporateRequest`.
-    - **Key Functions:** `Request.TableName()`, `CorporateRequest.TableName()`
+    - **Description:** Defines the data structures (structs) for database models, such as `Request`, `CorporateRequest`, and `GetIdeb` (for storing SLIK OJK data).
+    - **Key Functions:** `Request.TableName()`, `CorporateRequest.TableName()`, `GetIdeb.TableName()`
 
 - **`handlers.go`**
-    - **Description:** Contains the HTTP handler functions for various API endpoints, including login, creating requests, and retrieving requests.
-    - **Key Functions:** `loginHandler()`, `getDebtorExactIndividualHandler()`, `getDebtorExactCorporateHandler()`, `createRequestHandler()`, `createRequest()`, `getRequests()`
+    - **Description:** Contains the HTTP handler functions for various API endpoints.
+    - **Key Functions:** `loginHandler()`, `getDebtorExactIndividualHandler()`, `getDebtorExactCorporateHandler()`, `createRequestHandler()`, `createRequest()`, `getRequests()`, `generatePDFHandler()`
 
 - **`routes.go`**
     - **Description:** Registers all the HTTP routes and associates them with their respective handler functions.
     - **Key Functions:** `RegisterRoutes()`
+    - **Registered Routes:** `/api/login`, `/api/requests`, `/api/getDebtorExactIndividual`, `/api/getDebtorExactCorporate`, `/api/generate-pdf`

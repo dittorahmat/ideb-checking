@@ -39,23 +39,23 @@ function loadContent(page) {
 }
 
 function setupFormListener() {
-    const form = document.getElementById('ideb-request-form');
-    if (form) {
-        form.addEventListener('submit', function(event) {
-            event.preventDefault();
-            submitIdebRequest();
-        });
-    }
+    // This function is no longer needed as forms will directly call submitIdebRequest
 }
 
-function submitIdebRequest() {
+function submitIdebRequest(formId) {
+    const form = document.getElementById(formId);
+    if (!form) {
+        console.error(`Form with ID ${formId} not found.`);
+        return;
+    }
+
     const formData = {
-        nomor_referensi_pengguna: document.getElementById('nomor_referensi_pengguna').value,
-        tujuan_penggunaan: document.getElementById('tujuan_penggunaan').value,
-        jenis_identitas: document.getElementById('jenis_identitas').value,
-        nomor_identitas: document.getElementById('nomor_identitas').value,
-        permintaan_fasilitas_outstanding: document.getElementById('permintaan_fasilitas_outstanding').checked,
-        search_type: document.querySelector('input[name="search_type"]:checked').value
+        nomor_referensi_pengguna: form.querySelector('[id^="nomor_referensi_pengguna"]').value,
+        tujuan_penggunaan: form.querySelector('[id^="tujuan_penggunaan"]').value,
+        jenis_identitas: form.querySelector('[id^="jenis_identitas"]').value,
+        nomor_identitas: form.querySelector('[id^="nomor_identitas"]').value,
+        permintaan_fasilitas_outstanding: form.querySelector('[id^="permintaan_fasilitas_outstanding"]').checked,
+        search_type: form.querySelector('input[name^="search_type"]:checked').value
     };
 
     fetch('/api/requests', {
@@ -69,7 +69,12 @@ function submitIdebRequest() {
     .then(data => {
         console.log('Success:', data);
         alert('Request submitted successfully!');
-        loadContent('debitur-individual.html'); // Refresh the list
+        // Determine which list to refresh based on the form submitted
+        if (formId.includes("individual")) {
+            loadContent('debitur-individual.html');
+        } else if (formId.includes("badan-usaha")) {
+            loadContent('badan-usaha.html');
+        }
     })
     .catch((error) => {
         console.error('Error:', error);
@@ -116,7 +121,5 @@ function loadRequests(page) {
 }
 
 function viewDetail(id) {
-    // For v0, we can just show an alert.
-    // In a real app, this would fetch the details and generate a PDF.
-    alert(`Viewing details for request ID: ${id}`);
+    window.open(`/api/generate-pdf?id=${id}`, '_blank');
 }
