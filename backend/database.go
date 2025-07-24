@@ -17,5 +17,5 @@ func InitDatabase() {
 	}
 
 	// Migrate the schema
-	DB.AutoMigrate(&Request{}, &CorporateRequest{})
+	DB.AutoMigrate(&Request{}, &CorporateRequest{}, &GetIdeb{})
 }

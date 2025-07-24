@@ -13,10 +13,7 @@
         <label for="nomor_identitas_badan_usaha" class="form-label">Nomor Identitas Badan Usaha</label>
         <input type="text" class="form-control" id="nomor_identitas_badan_usaha" required>
     </div>
-    <div class="mb-3">
-        <label for="nama_badan_usaha" class="form-label">Nama Badan Usaha</label>
-        <input type="text" class="form-control" id="nama_badan_usaha" required>
-    </div>
+    
     <div class="mb-3 form-check">
         <input type="checkbox" class="form-check-input" id="permintaan_fasilitas_outstanding_badan_usaha">
         <label class="form-check-label" for="permintaan_fasilitas_outstanding_badan_usaha">Permintaan Fasilitas Outstanding</label>
@@ -42,7 +39,6 @@
 <script>
     document.getElementById('ideb-request-form-badan-usaha').addEventListener('submit', function(event) {
         event.preventDefault();
-        // Handle form submission, send data to backend
-        alert('Form Badan Usaha submitted!');
+        submitIdebRequest('ideb-request-form-badan-usaha');
     });
 </script>

@@ -1,7 +1,7 @@
 # Active Context
 
 ## 1. Current Work Focus
-The current focus is on continuing the development of the v0 mockup of the Ideb Checking application. The backend has been refactored, is running in the background, and comprehensive backend tests have been added. Data ingestion from `input.json`, PDF generation, asynchronous OJK query simulation, and placeholder pages are now implemented. The immediate next steps involve UI/UX refinements.
+The current focus is on enhancing the PDF generation for the v0 mockup of the Ideb Checking application, currently in **Phase 2** of the plan outlined in `pdfmapping.md`. The backend has been refactored, is running in the background, and comprehensive backend tests are in place. Data ingestion from `input.json`, PDF generation, asynchronous OJK query simulation, and placeholder pages are implemented.
 
 ## 2. Next Steps
 The immediate next steps are to build the core components of the v0 mockup:
@@ -10,9 +10,9 @@ The immediate next steps are to build the core components of the v0 mockup:
 3.  **Backend API (Go):**
     - Create a basic web server using the `net/http` package.
     - Implement the dummy login endpoint.
-    - Implement the endpoint to receive new IDEB requests and save them to the database using GORM, including ingestion of `input.json` data for "internal" search types and asynchronous simulation for "live" search types.
+    - Implement the endpoint to receive new IDEB requests and save them to the database using GORM, including ingestion of `input.json` data for "internal" search types and asynchronous simulation for "live" search types (currently has a bug in data population for "live" search types).
     - Implement the endpoint to list all existing requests using GORM.
-    - Implement PDF generation from `get_idebs` table data.
+    - Implement PDF generation from `get_idebs` table data, with Phase 1 (Core Information and Basic Structure) complete. Proceeding to Phase 2 (Iterating Corporate Debtors and Basic Shareholder Information).
     - **Refactoring:** `main.go` has been refactored into `database.go` (for DB initialization), `models.go` (for data structures), `handlers.go` (for HTTP handlers), and `routes.go` (for route registration) to improve modularity and maintainability.
 4.  **Frontend (HTML/Bootstrap):**
     - Create the main `index.html` with the sidebar navigation.

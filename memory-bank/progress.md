@@ -2,7 +2,7 @@
 
 ## 1. What Works
 - **Project Scaffolding:** `frontend` and `backend` directories are created.
-- **Database:** An SQLite database (`ideb.db`) has been created with a `requests` table.
+- **Database:** An SQLite database (`ideb.db`) has been created with a `requests` table. The `schema.sql` file has been removed as GORM handles schema migration directly.
 - **Backend API (Go):**
     - A basic Go web server is running.
     - Dummy login endpoint (`/api/login`) is functional.
@@ -17,7 +17,7 @@
 - **Integration:** The frontend is successfully communicating with the backend API for all implemented features.
 
 ## 2. What's Left to Build
-- **PDF Generation:** The "Lihat Detail" link is a placeholder. The backend needs to be able to generate a PDF report for a completed request.
+- **PDF Generation (Phase 1 Complete):** The backend now generates a PDF report with core header information and primary corporate debtor details mapped from `input.json`.
 - **Asynchronous OJK Queries:** The mechanism for simulating a "live" asynchronous call to SLIK OJK has been implemented, including a simulated delay and updating request status to "Selesai" with dummy data storage in `get_idebs` table.
 
 - **UI/UX Refinements:** The frontend is basic and can be improved with better styling, loading indicators, and user feedback.
@@ -28,4 +28,5 @@
 
 ## 4. Known Issues
 - No real error handling is implemented on the frontend or backend beyond basic console logs and alerts.
-- Comprehensive unit and integration tests have been added for the backend Go application.
+- Comprehensive unit and integration tests have been added for the backend Go application. However, some tests are currently failing due to the bug in the `createRequest` function for "live" search types.
+- We are facing challenges with the `replace` tool due to its strict exact matching requirements, which has hindered efficient code modifications in `handlers.go`.

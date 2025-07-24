@@ -3,8 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/johnfercher/maroto/v2"
 	"github.com/johnfercher/maroto/v2/pkg/components/col"
@@ -133,72 +135,25 @@ func createRequest(w http.ResponseWriter, r *http.Request) {
 				updatedReq.StatusAksi = "Selesai"
 				DB.Save(&updatedReq)
 
-				// Store dummy data in get_idebs table for live requests
-				dummyData := `{
-  "code": "200",
-  "status": "success",
-  "remark": "Berhasil",
-  "data": {
-    "header": {
-      "userReferenceCode": "live-simulated-" + fmt.Sprintf("%d", requestID),
-      "resultDate": "20250724120000",
-      "inquiryId": "9999999",
-      "inquiryUserId": "live-user",
-      "inquiryCreatedBy": "Simulated OJK",
-      "inquiryMemberCode": "0000",
-      "inquiryOfficeCode": "000",
-      "reportRequestPurposeCode": "00",
-      "inquiryDate": "20250724115500",
-      "dataSetTotal": "1",
-      "dataSetNumber": "1"
-    },
-    "corporate": {
-      "reportNumber": "SIM/LIVE/0000/2025",
-      "latestDataYearMonth": "202507",
-      "requestDate": "20250724115500",
-      "corporateKeyWord": {
-        "identityNumberName": "SIMULATED CORP",
-        "testPlace": "VIRTUAL",
-        "recordStatusFlag": "T"
-      },
-      "corporateDebtors": [
-        {
-          "identityNumberName": "SIMULATED HANLA",
-          "fullName": "SIMULATED HANLA WASHING",
-          "taxId": "987654321098765",
-          "companyType": "99",
-          "companyTypeDesc": "Simulated Business Entity",
-          "estPlace": "VIRTUAL",
-          "estCertNo": "00",
-          "estCertDate": "20200101",
-          "member": "000",
-          "memberDesc": "SIMULATED BANK",
-          "updatedDatetime": "20250724120000",
-          "address": "SIMULATED ADDRESS",
-          "subDistrict": "SIMULATED SUBDISTRICT",
-          "district": "SIMULATED DISTRICT",
-          "city": "0000",
-          "cityDesc": "Simulated City",
-          "postalCode": "00000",
-          "country": "ID",
-          "countryDesc": "Indonesia",
-          "latestAddCertNo": "000/0/SIM/2025",
-          "latestAddCertDate": "20250724",
-          "economicSector": "X-00000",
-          "economicSectorDesc": "Simulated Economic Sector",
-          "ratingDate": "",
-          "createdDatetime": "20250724115500",
-          "goPublicFlag": "T"
-        }
-      ]
-    }
-  }
-}`
+				// Read input.json for dummy data
+				byteValue, err := os.ReadFile("../memory-bank/input.json")
+				if err != nil {
+					log.Println("Error reading input.json for live simulation: ", err)
+					return
+				}
+
+				var inputData InputJSON
+				json.Unmarshal(byteValue, &inputData)
+
+				var nomorIdentitas string
+				if len(inputData.Data.Corporate.CorporateDebtors) > 0 {
+					nomorIdentitas = inputData.Data.Corporate.CorporateDebtors[0].TaxId
+				}
 
 				getIdebEntry := GetIdeb{
-					NomorReferensiPengguna: "live-simulated-" + fmt.Sprintf("%d", requestID),
-					NomorIdentitas:         "987654321098765", // Dummy TaxId for live simulation
-					Data:                   dummyData,
+					NomorReferensiPengguna: inputData.Data.Header.UserReferenceCode,
+					NomorIdentitas:         nomorIdentitas,
+					Data:                   string(byteValue),
 				}
 				DB.Create(&getIdebEntry)
 			}
@@ -254,21 +209,59 @@ func generatePDFHandler(w http.ResponseWriter, r *http.Request) {
 	m.AddRow(7, col.New(12).Add(text.New("Otoritas Jasa Keuangan", props.Text{Align: align.Center, Size: 12})))
 	m.AddRow(10, col.New(12).Add(text.New("", props.Text{})))
 
+	// Header Information
+	m.AddRow(5, col.New(3).Add(text.New("Nama", props.Text{Size: 8})), col.New(9).Add(text.New(inputData.Data.Corporate.CorporateKeyWord.IdentityNumberName, props.Text{Size: 8})))
+	m.AddRow(5, col.New(3).Add(text.New("NPWP", props.Text{Size: 8})), col.New(9).Add(text.New(inputData.Data.Corporate.CorporateDebtors[0].TaxId, props.Text{Size: 8})))
+	m.AddRow(5, col.New(3).Add(text.New("Tempat Pendirian", props.Text{Size: 8})), col.New(9).Add(text.New(inputData.Data.Corporate.CorporateKeyWord.TestPlace, props.Text{Size: 8})))
+	m.AddRow(5, col.New(3).Add(text.New("Tanggal Akte Pendirian", props.Text{Size: 8})), col.New(9).Add(text.New(inputData.Data.Corporate.CorporateDebtors[0].EstCertDate, props.Text{Size: 8})))
+
+	m.AddRow(5, col.New(3).Add(text.New("Kode Ref. Pengguna", props.Text{Size: 8})), col.New(9).Add(text.New(inputData.Data.Header.UserReferenceCode, props.Text{Size: 8})))
 	m.AddRow(5, col.New(3).Add(text.New("Nomor Laporan", props.Text{Size: 8})), col.New(9).Add(text.New(inputData.Data.Corporate.ReportNumber, props.Text{Size: 8})))
+	m.AddRow(5, col.New(3).Add(text.New("Posisi Data Terakhir", props.Text{Size: 8})), col.New(9).Add(text.New(inputData.Data.Corporate.LatestDataYearMonth, props.Text{Size: 8})))
 	m.AddRow(5, col.New(3).Add(text.New("Tanggal Permintaan", props.Text{Size: 8})), col.New(9).Add(text.New(inputData.Data.Corporate.RequestDate, props.Text{Size: 8})))
-	m.AddRow(5, col.New(3).Add(text.New("Kode Referensi Pengguna", props.Text{Size: 8})), col.New(9).Add(text.New(inputData.Data.Header.UserReferenceCode, props.Text{Size: 8})))
 
 	m.AddRow(10, col.New(12).Add(text.New("", props.Text{})))
 	m.AddRow(7, col.New(12).Add(text.New("DATA POKOK DEBITUR", props.Text{Align: align.Center, Size: 12, Style: fontstyle.Bold})))
 	m.AddRow(10, col.New(12).Add(text.New("", props.Text{})))
 
-	// Example: Corporate Debtor Information (simplified for brevity)
+	// Corporate Debtor Information
 	if len(inputData.Data.Corporate.CorporateDebtors) > 0 {
 		debtor := inputData.Data.Corporate.CorporateDebtors[0]
 		m.AddRow(5, col.New(3).Add(text.New("Nama Lengkap", props.Text{Size: 8})), col.New(9).Add(text.New(debtor.FullName, props.Text{Size: 8})))
 		m.AddRow(5, col.New(3).Add(text.New("NPWP", props.Text{Size: 8})), col.New(9).Add(text.New(debtor.TaxId, props.Text{Size: 8})))
+		m.AddRow(5, col.New(3).Add(text.New("Bentuk BU / Go Public", props.Text{Size: 8})), col.New(9).Add(text.New(fmt.Sprintf("%s / %s", debtor.CompanyTypeDesc, debtor.GoPublicFlag), props.Text{Size: 8})))
+		m.AddRow(5, col.New(3).Add(text.New("Tempat Pendirian", props.Text{Size: 8})), col.New(9).Add(text.New(debtor.EstPlace, props.Text{Size: 8})))
+		m.AddRow(5, col.New(3).Add(text.New("No / Tanggal Akta Pendirian", props.Text{Size: 8})), col.New(9).Add(text.New(fmt.Sprintf("%s / %s", debtor.EstCertNo, debtor.EstCertDate), props.Text{Size: 8})))
 		m.AddRow(5, col.New(3).Add(text.New("Alamat", props.Text{Size: 8})), col.New(9).Add(text.New(debtor.Address, props.Text{Size: 8})))
-		m.AddRow(5, col.New(3).Add(text.New("Kota", props.Text{Size: 8})), col.New(9).Add(text.New(debtor.CityDesc, props.Text{Size: 8})))
+		m.AddRow(5, col.New(3).Add(text.New("Kelurahan", props.Text{Size: 8})), col.New(9).Add(text.New(debtor.SubDistrict, props.Text{Size: 8})))
+		m.AddRow(5, col.New(3).Add(text.New("Kecamatan", props.Text{Size: 8})), col.New(9).Add(text.New(debtor.District, props.Text{Size: 8})))
+		m.AddRow(5, col.New(3).Add(text.New("Kabupaten / Kota", props.Text{Size: 8})), col.New(9).Add(text.New(debtor.CityDesc, props.Text{Size: 8})))
+		m.AddRow(5, col.New(3).Add(text.New("Kode Pos", props.Text{Size: 8})), col.New(9).Add(text.New(debtor.PostalCode, props.Text{Size: 8})))
+		m.AddRow(5, col.New(3).Add(text.New("Negara", props.Text{Size: 8})), col.New(9).Add(text.New(debtor.CountryDesc, props.Text{Size: 8})))
+		m.AddRow(5, col.New(3).Add(text.New("Bidang Usaha", props.Text{Size: 8})), col.New(9).Add(text.New(debtor.EconomicSectorDesc, props.Text{Size: 8})))
+		m.AddRow(5, col.New(3).Add(text.New("Pelapor / Tanggal Update", props.Text{Size: 8})), col.New(9).Add(text.New(fmt.Sprintf("%s / %s", debtor.MemberDesc, debtor.UpdatedDatetime), props.Text{Size: 8})))
+		m.AddRow(5, col.New(3).Add(text.New("Peringkat / Tgl Pemeringkatan", props.Text{Size: 8})), col.New(9).Add(text.New(fmt.Sprintf("%s / %s", debtor.RatingDate, debtor.RatingDate), props.Text{Size: 8})))
+		m.AddRow(10, col.New(12).Add(text.New("", props.Text{})))
+
+		// Pemilik / Pengurus
+		if len(debtor.OfficisSharehldrsGroups) > 0 {
+			m.AddRow(7, col.New(12).Add(text.New("Pemilik / Pengurus", props.Text{Align: align.Center, Size: 12, Style: fontstyle.Bold})))
+			m.AddRow(10, col.New(12).Add(text.New("", props.Text{})))
+
+			for j, group := range debtor.OfficisSharehldrsGroups {
+				m.AddRow(5, col.New(12).Add(text.New(fmt.Sprintf("Group %d: %s", j+1, group.MemberDesc), props.Text{Size: 9, Style: fontstyle.Bold})))
+				for k, shareholder := range group.OfficisSharehldrs {
+					m.AddRow(5, col.New(12).Add(text.New(fmt.Sprintf("  Shareholder %d: %s (%s)", k+1, shareholder.IdentityNumberName, shareholder.IdentityNumber), props.Text{Size: 8})))
+					m.AddRow(5, col.New(3).Add(text.New("    Jenis Kelamin", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.GenderDesc, props.Text{Size: 8})))
+					m.AddRow(5, col.New(3).Add(text.New("    Jabatan", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.JobPositionDesc, props.Text{Size: 8})))
+					m.AddRow(5, col.New(3).Add(text.New("    Pangsa Kepemilikan", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.ShareOwnership, props.Text{Size: 8})))
+					m.AddRow(5, col.New(3).Add(text.New("    Alamat", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.Address, props.Text{Size: 8})))
+					m.AddRow(5, col.New(3).Add(text.New("    Kabupaten / Kota", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.CityDesc, props.Text{Size: 8})))
+					m.AddRow(5, col.New(3).Add(text.New("    Status Pengurus/Pemilik", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.ShareholderStatusDesc, props.Text{Size: 8})))
+					m.AddRow(10, col.New(12).Add(text.New("", props.Text{})))
+				}
+			}
+		}
 	}
 
 	// Output the PDF

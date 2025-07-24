@@ -7,6 +7,7 @@ import (
 
 func main() {
 	InitDatabase()
+
 	RegisterRoutes()
 
 	log.Println("Server starting on port 8080...")
