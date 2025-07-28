@@ -7,9 +7,9 @@ func RegisterRoutes() {
 	fs := http.FileServer(http.Dir("../frontend"))
 	http.Handle("/", fs)
 
-	http.HandleFunc("/api/login", loginHandler)
-	http.HandleFunc("/api/requests", createRequestHandler)
-	http.HandleFunc("/api/getDebtorExactIndividual", getDebtorExactIndividualHandler)
-	http.HandleFunc("/api/getDebtorExactCorporate", getDebtorExactCorporateHandler)
-	http.HandleFunc("/api/generate-pdf", generatePDFHandler)
+	http.HandleFunc("/api/login", CORSMiddleware(loginHandler))
+	http.HandleFunc("/api/requests", CORSMiddleware(createRequestHandler))
+	http.HandleFunc("/api/getDebtorExactIndividual", CORSMiddleware(getDebtorExactIndividualHandler))
+	http.HandleFunc("/api/getDebtorExactCorporate", CORSMiddleware(getDebtorExactCorporateHandler))
+	http.HandleFunc("/api/generate-pdf", CORSMiddleware(generatePDFHandler))
 }

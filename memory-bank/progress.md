@@ -17,7 +17,7 @@
 - **Integration:** The frontend is successfully communicating with the backend API for all implemented features.
 
 ## 2. What's Left to Build
-- **PDF Generation (Phase 1 Complete):** The backend now generates a PDF report with core header information and primary corporate debtor details mapped from `input.json`.
+- **PDF Generation (Phase 3 Complete):** The backend now generates a PDF report with a refined layout and all shareholder details mapped from `input.json`.
 - **Asynchronous OJK Queries:** The mechanism for simulating a "live" asynchronous call to SLIK OJK has been implemented, including a simulated delay and updating request status to "Selesai" with dummy data storage in `get_idebs` table.
 
 - **UI/UX Refinements:** The frontend is basic and can be improved with better styling, loading indicators, and user feedback.

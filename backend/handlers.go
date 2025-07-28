@@ -59,14 +59,6 @@ func getDebtorExactCorporateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func createRequestHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
 
 	if r.Method == "POST" {
 		createRequest(w, r)
@@ -82,86 +74,101 @@ func createRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.SearchType == "internal" {
-		// Read input.json
-		byteValue, err := os.ReadFile("../memory-bank/input.json")
-		if err != nil {
-			http.Error(w, "Error reading input.json: "+err.Error(), http.StatusInternalServerError)
+	switch req.SearchType {
+	case SearchTypeInternal:
+		if err := handleInternalSearch(w, &req); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
-		var inputData InputJSON
-		json.Unmarshal(byteValue, &inputData)
-
-		// Extract data for GetIdeb table
-		var nomorIdentitas string
-		if len(inputData.Data.Corporate.CorporateDebtors) > 0 {
-			nomorIdentitas = inputData.Data.Corporate.CorporateDebtors[0].TaxId
-		}
-
-		getIdebEntry := GetIdeb{
-			NomorReferensiPengguna: inputData.Data.Header.UserReferenceCode,
-			NomorIdentitas:         nomorIdentitas,
-			Data:                   string(byteValue),
-		}
-
-		if result := DB.Create(&getIdebEntry); result.Error != nil {
-			http.Error(w, "Error saving to get_idebs table: "+result.Error.Error(), http.StatusInternalServerError)
+	case SearchTypeLive:
+		if err := handleLiveSearch(w, &req); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
-		req.StatusAksi = "Selesai"
-		if result := DB.Save(&req); result.Error != nil {
-			http.Error(w, "Error updating request status: "+result.Error.Error(), http.StatusInternalServerError)
-			return
-		}
-
-	} else if req.SearchType == "live" {
-		// Set initial status to "Dalam Proses"
-		req.StatusAksi = "Dalam Proses"
-		if result := DB.Create(&req); result.Error != nil {
-			http.Error(w, result.Error.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		// Simulate asynchronous call to SLIK OJK in a goroutine
-		go func(requestID uint) {
-			// Simulate a delay for the OJK API call
-			time.Sleep(5 * time.Second) // Simulate 5 seconds delay
-
-			// After the simulated call, update the request status to "Selesai"
-			var updatedReq Request
-			if result := DB.First(&updatedReq, requestID); result.Error == nil {
-				updatedReq.StatusAksi = "Selesai"
-				DB.Save(&updatedReq)
-
-				// Read input.json for dummy data
-				byteValue, err := os.ReadFile("../memory-bank/input.json")
-				if err != nil {
-					log.Println("Error reading input.json for live simulation: ", err)
-					return
-				}
-
-				var inputData InputJSON
-				json.Unmarshal(byteValue, &inputData)
-
-				var nomorIdentitas string
-				if len(inputData.Data.Corporate.CorporateDebtors) > 0 {
-					nomorIdentitas = inputData.Data.Corporate.CorporateDebtors[0].TaxId
-				}
-
-				getIdebEntry := GetIdeb{
-					NomorReferensiPengguna: inputData.Data.Header.UserReferenceCode,
-					NomorIdentitas:         nomorIdentitas,
-					Data:                   string(byteValue),
-				}
-				DB.Create(&getIdebEntry)
-			}
-		}(req.ID)
+	default:
+		http.Error(w, "Invalid search type", http.StatusBadRequest)
+		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(req)
+	if err := json.NewEncoder(w).Encode(req); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func handleInternalSearch(w http.ResponseWriter, req *Request) error {
+	byteValue, err := os.ReadFile("../memory-bank/input.json")
+	if err != nil {
+		return fmt.Errorf("Error reading input.json: %w", err)
+	}
+
+	var inputData InputJSON
+	if err := json.Unmarshal(byteValue, &inputData); err != nil {
+		return fmt.Errorf("Error unmarshalling input.json: %w", err)
+	}
+
+	var nomorIdentitas string
+	if len(inputData.Data.Corporate.CorporateDebtors) > 0 {
+		nomorIdentitas = inputData.Data.Corporate.CorporateDebtors[0].TaxId
+	}
+
+	getIdebEntry := GetIdeb{
+		NomorReferensiPengguna: inputData.Data.Header.UserReferenceCode,
+		NomorIdentitas:         nomorIdentitas,
+		Data:                   string(byteValue),
+	}
+
+	if result := DB.Create(&getIdebEntry); result.Error != nil {
+		return fmt.Errorf("Error saving to get_idebs table: %w", result.Error)
+	}
+
+	req.StatusAksi = "Selesai"
+	if result := DB.Save(req); result.Error != nil {
+		return fmt.Errorf("Error updating request status: %w", result.Error)
+	}
+	return nil
+}
+
+func handleLiveSearch(w http.ResponseWriter, req *Request) error {
+	req.StatusAksi = "Dalam Proses"
+	if result := DB.Create(req); result.Error != nil {
+		return result.Error
+	}
+
+	go func(requestID uint) {
+		time.Sleep(5 * time.Second)
+
+		var updatedReq Request
+		if result := DB.First(&updatedReq, requestID); result.Error == nil {
+			updatedReq.StatusAksi = "Selesai"
+			DB.Save(&updatedReq)
+
+			byteValue, err := os.ReadFile(InputJSONPath)
+			if err != nil {
+				log.Println("Error reading input.json for live simulation: ", err)
+				return
+			}
+
+			var inputData InputJSON
+			if err := json.Unmarshal(byteValue, &inputData); err != nil {
+				log.Println("Error unmarshalling input.json for live simulation: ", err)
+				return
+			}
+
+			var nomorIdentitas string
+			if len(inputData.Data.Corporate.CorporateDebtors) > 0 {
+				nomorIdentitas = inputData.Data.Corporate.CorporateDebtors[0].TaxId
+			}
+
+			getIdebEntry := GetIdeb{
+				NomorReferensiPengguna: inputData.Data.Header.UserReferenceCode,
+				NomorIdentitas:         nomorIdentitas,
+				Data:                   string(byteValue),
+			}
+			DB.Create(&getIdebEntry)
+		}
+	}(req.ID)
+	return nil
 }
 
 func getRequests(w http.ResponseWriter, r *http.Request, tableName string) {
@@ -172,7 +179,9 @@ func getRequests(w http.ResponseWriter, r *http.Request, tableName string) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(requests)
+	if err := json.NewEncoder(w).Encode(requests); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func generatePDFHandler(w http.ResponseWriter, r *http.Request) {
@@ -225,8 +234,7 @@ func generatePDFHandler(w http.ResponseWriter, r *http.Request) {
 	m.AddRow(10, col.New(12).Add(text.New("", props.Text{})))
 
 	// Corporate Debtor Information
-	if len(inputData.Data.Corporate.CorporateDebtors) > 0 {
-		debtor := inputData.Data.Corporate.CorporateDebtors[0]
+	for _, debtor := range inputData.Data.Corporate.CorporateDebtors {
 		m.AddRow(5, col.New(3).Add(text.New("Nama Lengkap", props.Text{Size: 8})), col.New(9).Add(text.New(debtor.FullName, props.Text{Size: 8})))
 		m.AddRow(5, col.New(3).Add(text.New("NPWP", props.Text{Size: 8})), col.New(9).Add(text.New(debtor.TaxId, props.Text{Size: 8})))
 		m.AddRow(5, col.New(3).Add(text.New("Bentuk BU / Go Public", props.Text{Size: 8})), col.New(9).Add(text.New(fmt.Sprintf("%s / %s", debtor.CompanyTypeDesc, debtor.GoPublicFlag), props.Text{Size: 8})))
@@ -248,20 +256,24 @@ func generatePDFHandler(w http.ResponseWriter, r *http.Request) {
 			m.AddRow(7, col.New(12).Add(text.New("Pemilik / Pengurus", props.Text{Align: align.Center, Size: 12, Style: fontstyle.Bold})))
 			m.AddRow(10, col.New(12).Add(text.New("", props.Text{})))
 
-			for j, group := range debtor.OfficisSharehldrsGroups {
-				m.AddRow(5, col.New(12).Add(text.New(fmt.Sprintf("Group %d: %s", j+1, group.MemberDesc), props.Text{Size: 9, Style: fontstyle.Bold})))
-				for k, shareholder := range group.OfficisSharehldrs {
-					m.AddRow(5, col.New(12).Add(text.New(fmt.Sprintf("  Shareholder %d: %s (%s)", k+1, shareholder.IdentityNumberName, shareholder.IdentityNumber), props.Text{Size: 8})))
-					m.AddRow(5, col.New(3).Add(text.New("    Jenis Kelamin", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.GenderDesc, props.Text{Size: 8})))
-					m.AddRow(5, col.New(3).Add(text.New("    Jabatan", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.JobPositionDesc, props.Text{Size: 8})))
-					m.AddRow(5, col.New(3).Add(text.New("    Pangsa Kepemilikan", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.ShareOwnership, props.Text{Size: 8})))
-					m.AddRow(5, col.New(3).Add(text.New("    Alamat", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.Address, props.Text{Size: 8})))
-					m.AddRow(5, col.New(3).Add(text.New("    Kabupaten / Kota", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.CityDesc, props.Text{Size: 8})))
-					m.AddRow(5, col.New(3).Add(text.New("    Status Pengurus/Pemilik", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.ShareholderStatusDesc, props.Text{Size: 8})))
+			for _, group := range debtor.OfficisSharehldrsGroups {
+				m.AddRow(5, col.New(12).Add(text.New("Pelapor : "+group.MemberDesc, props.Text{Size: 9, Style: fontstyle.Bold})))
+				for _, shareholder := range group.OfficisSharehldrs {
+					m.AddRow(5, col.New(3).Add(text.New("Nama", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.IdentityNumberName, props.Text{Size: 8})))
+					m.AddRow(5, col.New(3).Add(text.New("No. Identitas", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.IdentityNumber, props.Text{Size: 8})))
+					m.AddRow(5, col.New(3).Add(text.New("Jenis Kelamin", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.GenderDesc, props.Text{Size: 8})))
+					m.AddRow(5, col.New(3).Add(text.New("Jabatan", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.JobPositionDesc, props.Text{Size: 8})))
+					m.AddRow(5, col.New(3).Add(text.New("Pangsa Kepemilikan", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.ShareOwnership+"%", props.Text{Size: 8})))
+					m.AddRow(5, col.New(3).Add(text.New("Alamat", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.Address, props.Text{Size: 8})))
+					m.AddRow(5, col.New(3).Add(text.New("Kelurahan", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.SubDistrict, props.Text{Size: 8})))
+					m.AddRow(5, col.New(3).Add(text.New("Kecamatan", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.District, props.Text{Size: 8})))
+					m.AddRow(5, col.New(3).Add(text.New("Kabupaten / Kota", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.CityDesc, props.Text{Size: 8})))
+					m.AddRow(5, col.New(3).Add(text.New("Status Pengurus/Pemilik", props.Text{Size: 8})), col.New(9).Add(text.New(shareholder.ShareholderStatusDesc, props.Text{Size: 8})))
 					m.AddRow(10, col.New(12).Add(text.New("", props.Text{})))
 				}
 			}
 		}
+		m.AddRow(15, col.New(12)) // Add some space between debtor sections
 	}
 
 	// Output the PDF
@@ -273,5 +285,8 @@ func generatePDFHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", "attachment; filename=\"ideb_report.pdf\"")
-	w.Write(pdf.GetBytes())
+	_, err = w.Write(pdf.GetBytes())
+	if err != nil {
+		http.Error(w, "Error writing PDF to response: "+err.Error(), http.StatusInternalServerError)
+	}
 }

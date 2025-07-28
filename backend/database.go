@@ -17,5 +17,7 @@ func InitDatabase() {
 	}
 
 	// Migrate the schema
-	DB.AutoMigrate(&Request{}, &CorporateRequest{}, &GetIdeb{})
+	if err := DB.AutoMigrate(&Request{}, &CorporateRequest{}, &GetIdeb{}); err != nil {
+		log.Fatalf("failed to migrate database: %v", err)
+	}
 }

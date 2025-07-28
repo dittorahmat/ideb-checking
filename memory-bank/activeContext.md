@@ -12,7 +12,7 @@ The immediate next steps are to build the core components of the v0 mockup:
     - Implement the dummy login endpoint.
     - Implement the endpoint to receive new IDEB requests and save them to the database using GORM, including ingestion of `input.json` data for "internal" search types and asynchronous simulation for "live" search types (currently has a bug in data population for "live" search types).
     - Implement the endpoint to list all existing requests using GORM.
-    - Implement PDF generation from `get_idebs` table data, with Phase 1 (Core Information and Basic Structure) complete. Proceeding to Phase 2 (Iterating Corporate Debtors and Basic Shareholder Information).
+    - Implement PDF generation from `get_idebs` table data, with Phase 3 (Detailed Shareholder Information and Layout Refinements) complete.
     - **Refactoring:** `main.go` has been refactored into `database.go` (for DB initialization), `models.go` (for data structures), `handlers.go` (for HTTP handlers), and `routes.go` (for route registration) to improve modularity and maintainability.
 4.  **Frontend (HTML/Bootstrap):**
     - Create the main `index.html` with the sidebar navigation.
