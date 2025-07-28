@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -307,4 +308,88 @@ func TestGetDebtorExactCorporateHandler(t *testing.T) {
 	assert.Len(t, requests, 2)
 	assert.Equal(t, "CORPORATE1", requests[0].NomorReferensiPengguna)
 	assert.Equal(t, "CORPORATE2", requests[1].NomorReferensiPengguna)
+}
+
+func TestGeneratePDFHandler(t *testing.T) {
+	DB = setupTestDB()
+
+	// Insert a dummy GetIdeb entry
+	dummyJSONData := `{
+		"code": "000",
+		"status": "SUCCESS",
+		"remark": "SUCCESS",
+		"data": {
+			"header": {
+				"userReferenceCode": "PDFTEST123"
+			},
+			"corporate": {
+				"reportNumber": "REPORT123",
+				"latestDataYearMonth": "2023-12",
+				"requestDate": "2023-01-01",
+				"corporateKeyWord": {
+					"identityNumberName": "PT TEST JAYA",
+					"testPlace": "Jakarta"
+				},
+				"corporateDebtors": [
+					{
+						"fullName": "John Doe",
+						"taxId": "1234567890",
+						"companyTypeDesc": "PT",
+						"goPublicFlag": "T",
+						"estPlace": "Bandung",
+						"estCertNo": "ACT123",
+						"estCertDate": "2020-01-01",
+						"address": "Jl. Contoh No. 1",
+						"subDistrict": "Kel. Contoh",
+						"district": "Kec. Contoh",
+						"cityDesc": "Jakarta",
+						"postalCode": "12345",
+						"countryDesc": "Indonesia",
+						"memberDesc": "Bank A",
+						"updatedDatetime": "2023-01-01",
+						"economicSectorDesc": "Perdagangan",
+						"ratingDate": "2022-01-01",
+						"officisSharehldrsGroups": [
+							{
+								"memberDesc": "Group A",
+								"officisSharehldrs": [
+									{
+										"identityNumberName": "Shareholder 1",
+										"identityNumber": "SH123",
+										"genderDesc": "Laki-laki",
+										"jobPositionDesc": "Direktur",
+										"shareOwnership": "50",
+										"address": "Jl. Saham No. 1",
+										"subDistrict": "Kel. Saham",
+										"district": "Kec. Saham",
+										"cityDesc": "Surabaya",
+										"shareholderStatusDesc": "Aktif"
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		}
+	}`
+
+	getIdebEntry := GetIdeb{
+		NomorReferensiPengguna: "PDFTEST123",
+		NomorIdentitas:         "1234567890",
+		Data:                   dummyJSONData,
+	}
+	DB.Create(&getIdebEntry)
+
+	req, err := http.NewRequest("GET", fmt.Sprintf("/api/generate-pdf?id=%d", getIdebEntry.ID), nil)
+	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(generatePDFHandler)
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, "application/pdf", rr.Header().Get("Content-Type"))
+	assert.Equal(t, "attachment; filename=\"ideb_report.pdf\"", rr.Header().Get("Content-Disposition"))
 }
