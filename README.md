@@ -13,11 +13,11 @@ The application addresses the challenge of slow data retrieval from the SLIK OJK
 *   **User Authentication:** Dummy login functionality (any email/password works).
 *   **Request Submission:** Users can submit new IDEB requests with details like reference number, purpose, identity type, and identity number.
 *   **Search Options:** Choice between searching internal database or initiating a "live" query to SLIK OJK.
-*   **Request Listing:** Displays a list of all submitted requests with their current status.
+*   **Request Listing:** Displays a list of all submitted requests with their current status, fetched from `/api/requests/{type}`.
     *   "Dalam Proses" for pending requests.
     *   "Lihat Detail" link for completed requests (placeholder for PDF generation).
 *   **Frontend Navigation:** Basic sidebar navigation with collapsible menus for different sections.
-*   **Backend API:** RESTful API for login, creating requests, and listing requests.
+*   **Backend API:** RESTful API for login, creating requests, and listing requests (now using `/api/requests/{type}`).
 *   **Database:** SQLite for local data storage.
 
 ### To Be Implemented (Future Versions)
@@ -34,8 +34,8 @@ The application addresses the challenge of slow data retrieval from the SLIK OJK
 ### Version 0 (Mockup)
 
 *   **Frontend:** HTML, JavaScript, Bootstrap, CSS
-*   **Backend:** Go (using `net/http` for simplicity)
-*   **Database:** SQLite (`github.com/mattn/go-sqlite3`)
+*   **Backend:** Go (using `net/http` and `gorilla/mux`)
+*   **Database:** SQLite (`gorm.io/driver/sqlite`)
 
 ### Future Considerations (Version 1)
 
@@ -55,22 +55,41 @@ The application addresses the challenge of slow data retrieval from the SLIK OJK
 │   ├── go.mod
 │   ├── go.sum
 │   ├── main.go
-│   └── schema.sql
+│   ├── database.go
+│   ├── handlers.go
+│   ├── middleware.go
+│   ├── models.go
+│   ├── pdf.go
+│   ├── routes.go
+│   └── utils.go
 ├── frontend/
 │   ├── badan-usaha.html
+│   ├── dashboard.html
 │   ├── debitur-individual.html
 │   ├── index.html
 │   ├── input-permintaan-badan-usaha.html
 │   ├── input-permintaan-individual.html
+│   ├── parameter-ldap.html
+│   ├── parameter-user-api.html
+│   ├── parameter-valid-token.html
 │   ├── script.js
-│   └── style.css
+│   ├── style.css
+│   └── user-management.html
 └── memory-bank/
     ├── activeContext.md
+    ├── code-smells-refactor.md
+    ├── input.json
+    ├── instruksi.txt
+    ├── json.png
+    ├── pdfmapping.md
     ├── productContext.md
     ├── progress.md
     ├── projectBrief.md
+    ├── SARIPARI-PERTIWI-ABADI-b.pdf
+    ├── ss.png
     ├── systemPatterns.md
-    └── techContext.md
+    ├── techContext.md
+    └── testing-strategy.md
 ```
 
 ## Setup and Running the Application
@@ -89,7 +108,7 @@ The application addresses the challenge of slow data retrieval from the SLIK OJK
     ```
     Run the backend server:
     ```bash
-    go run main.go
+    go run .
     ```
     The backend server will serve the frontend files and handle API requests.
 

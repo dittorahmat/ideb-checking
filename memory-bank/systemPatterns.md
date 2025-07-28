@@ -19,7 +19,7 @@ For v1, this architecture will be maintained but deployed as a single unit withi
 
 ### Status & Detail View Data Flow
 1.  **User** navigates to the "Daftar Permintaan IDeb" page.
-2.  **Frontend** sends a GET request to the backend API to fetch all requests for the user.
+2.  **Frontend** sends a GET request to the backend API to fetch all requests for the user (e.g., `/api/requests/individual` or `/api/requests/corporate`).
 3.  **Backend** queries the SQLite database and returns the list of requests with their current statuses.
 4.  **Frontend** renders the list.
 5.  If a user clicks "Lihat Detail" on a "Selesai" request, the **Frontend** makes a request to the `/api/generate-pdf` endpoint with the request ID.
@@ -28,8 +28,8 @@ For v1, this architecture will be maintained but deployed as a single unit withi
 ## 3. Key Components
 - **Authentication:** A dummy login system for v0 that accepts any credentials.
 - **Request Input Module:** The HTML forms (`input-permintaan-individual.html`, `input-permintaan-badan-usaha.html`) and corresponding backend endpoint (`/api/requests`) for submitting new IDEB requests.
-- **Request List Module:** The UI (`debitur-individual.html`, `badan-usaha.html`) and backend endpoints (`/api/getDebtorExactIndividual`, `/api/getDebtorExactCorporate`) for displaying the status of all submitted requests.
-- **PDF Generation Service:** A backend service (`generatePDFHandler`) that takes detailed data from the `get_idebs` table and formats it into a printable PDF using the `Maroto` library.
+- **Request List Module:** The UI (`debitur-individual.html`, `badan-usaha.html`) and backend endpoint (`/api/requests/{type}`) for displaying the status of all submitted requests.
+- **PDF Generation Service:** A backend service (`generatePDFHandler` in `handlers.go` and `generateIdebPDF` in `pdf.go`) that takes detailed data from the `get_idebs` table and formats it into a printable PDF using the `Maroto` library.
 - **SLIK OJK API Client (Simulated):** A module within the backend responsible for simulating asynchronous requests to the external OJK API and storing dummy data in the `get_idebs` table.
 - **Placeholder Pages:** Frontend pages for Dashboard (`dashboard.html`), Parameter (`parameter-user-api.html`, `parameter-valid-token.html`, `parameter-ldap.html`), and User Management (`user-management.html`).
 
@@ -49,10 +49,14 @@ To improve modularity and maintainability, the Go backend application has been r
     - **Key Functions:** `Request.TableName()`, `CorporateRequest.TableName()`, `GetIdeb.TableName()`
 
 - **`handlers.go`**
-    - **Description:** Contains the HTTP handler functions for various API endpoints.
-    - **Key Functions:** `loginHandler()`, `getDebtorExactIndividualHandler()`, `getDebtorExactCorporateHandler()`, `createRequestHandler()`, `createRequest()`, `getRequests()`, `generatePDFHandler()`
+    - **Description:** Contains the HTTP handler functions for various API endpoints. `readAndUnmarshalInputJSON` is a helper function extracted for JSON processing, and `generatePDFHandler` now calls `generateIdebPDF` from `pdf.go`.
+    - **Key Functions:** `loginHandler()`, `getRequestsHandler()`, `createRequestHandler()`, `handleInternalSearch()`, `handleLiveSearch()`, `readAndUnmarshalInputJSON()`, `generatePDFHandler()`
+
+- **`pdf.go`**
+    - **Description:** Contains the logic for PDF generation.
+    - **Key Functions:** `generateIdebPDF()`
 
 - **`routes.go`**
     - **Description:** Registers all the HTTP routes and associates them with their respective handler functions.
     - **Key Functions:** `RegisterRoutes()`
-    - **Registered Routes:** `/api/login`, `/api/requests`, `/api/getDebtorExactIndividual`, `/api/getDebtorExactCorporate`, `/api/generate-pdf`
+    - **Registered Routes:** `/api/login`, `/api/requests`, `/api/requests/{type}`, `/api/generate-pdf`

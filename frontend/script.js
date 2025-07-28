@@ -81,9 +81,9 @@ function submitIdebRequest(formId) {
 function loadRequests(page) {
     let apiUrl = '';
     if (page === 'debitur-individual.html') {
-        apiUrl = '/api/getDebtorExactIndividual';
+        apiUrl = '/api/requests/individual';
     } else if (page === 'badan-usaha.html') {
-        apiUrl = '/api/getDebtorExactCorporate';
+        apiUrl = '/api/requests/corporate';
     }
 
     fetch(apiUrl)
