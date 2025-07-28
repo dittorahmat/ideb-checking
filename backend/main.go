@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 )
 
-var InputJSONPath string
-
 func main() {
 	// Determine the absolute path to input.json
 	executablePath, err := os.Executable()
@@ -16,11 +14,11 @@ func main() {
 		log.Fatalf("Failed to get executable path: %v", err)
 	}
 	executableDir := filepath.Dir(executablePath)
-	InputJSONPath = filepath.Join(executableDir, "..", "memory-bank", "input.json")
+	inputJSONPath := filepath.Join(executableDir, "..", "memory-bank", "input.json")
 
 	InitDatabase()
 
-	RegisterRoutes()
+	RegisterRoutes(inputJSONPath)
 
 	log.Println("Server starting on port 8080...")
 	if err := http.ListenAndServe(":8080", nil); err != nil {

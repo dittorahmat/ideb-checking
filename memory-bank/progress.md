@@ -28,5 +28,5 @@
 
 ## 4. Known Issues
 - No real error handling is implemented on the frontend or backend beyond basic console logs and alerts.
-- Comprehensive unit and integration tests have been added for the backend Go application. The `TestCreateRequestHandler_LiveSearch` is currently failing because the `readFileFunc` mock isn't correctly applied within the goroutine, and `InputJSONPath` is not being correctly initialized for each test.
-- We are facing challenges with the `replace` tool due to its strict exact matching requirements, which has hindered efficient code modifications in `handlers.go`.
+- Comprehensive unit and integration tests have been added for the backend Go application. The `TestCreateRequestHandler_LiveSearch` is now passing after refactoring `InputJSONPath` and `readFileFunc` handling.
+- The challenges with the `replace` tool have been overcome by carefully constructing the `old_string` and `new_string` parameters.

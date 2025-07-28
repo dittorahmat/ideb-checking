@@ -61,15 +61,18 @@ func getDebtorExactCorporateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func createRequestHandler(w http.ResponseWriter, r *http.Request) {
+	// For now, we'll use a placeholder for InputJSONPath. This will be properly set in main.go
+	// or overridden in tests.
+	inputJSONPath := ""
 
 	if r.Method == "POST" {
-		createRequest(w, r)
+		createRequest(w, r, inputJSONPath)
 	} else {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
-func createRequest(w http.ResponseWriter, r *http.Request) {
+func createRequest(w http.ResponseWriter, r *http.Request, inputJSONPath string) {
 	var req Request
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -78,12 +81,12 @@ func createRequest(w http.ResponseWriter, r *http.Request) {
 
 	switch req.SearchType {
 	case SearchTypeInternal:
-		if err := handleInternalSearch(w, &req); err != nil {
+		if err := handleInternalSearch(w, &req, inputJSONPath); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	case SearchTypeLive:
-		if err := handleLiveSearch(w, &req, readFileFunc); err != nil {
+		if err := handleLiveSearch(w, &req, readFileFunc, inputJSONPath); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -98,8 +101,8 @@ func createRequest(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleInternalSearch(w http.ResponseWriter, req *Request) error {
-	byteValue, err := readFileFunc(InputJSONPath)
+func handleInternalSearch(w http.ResponseWriter, req *Request, inputJSONPath string) error {
+	byteValue, err := readFileFunc(inputJSONPath)
 	if err != nil {
 		return fmt.Errorf("Error reading input.json: %w", err)
 	}
@@ -131,13 +134,13 @@ func handleInternalSearch(w http.ResponseWriter, req *Request) error {
 	return nil
 }
 
-func handleLiveSearch(w http.ResponseWriter, req *Request, readFile func(string) ([]byte, error)) error {
+func handleLiveSearch(w http.ResponseWriter, req *Request, readFile func(string) ([]byte, error), inputJSONPath string) error {
 	req.StatusAksi = "Dalam Proses"
 	if result := DB.Create(req); result.Error != nil {
 		return result.Error
 	}
 
-	go func(requestID uint, readFile func(string) ([]byte, error)) {
+	go func(requestID uint, readFile func(string) ([]byte, error), inputJSONPath string) {
 		time.Sleep(5 * time.Second)
 
 		var updatedReq Request
@@ -145,7 +148,7 @@ func handleLiveSearch(w http.ResponseWriter, req *Request, readFile func(string)
 			updatedReq.StatusAksi = "Selesai"
 			DB.Save(&updatedReq)
 
-			byteValue, err := readFile(InputJSONPath)
+			byteValue, err := readFile(inputJSONPath)
 			if err != nil {
 				log.Println("Error reading input.json for live simulation: ", err)
 				return
@@ -169,7 +172,7 @@ func handleLiveSearch(w http.ResponseWriter, req *Request, readFile func(string)
 			}
 			DB.Create(&getIdebEntry)
 		}
-	}(req.ID, readFile)
+	}(req.ID, readFile, inputJSONPath)
 	return nil
 }
 

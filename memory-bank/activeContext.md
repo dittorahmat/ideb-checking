@@ -1,7 +1,7 @@
 # Active Context
 
 ## 1. Current Work Focus
-The current focus is on enhancing the PDF generation for the v0 mockup of the Ideb Checking application, currently in **Phase 2** of the plan outlined in `pdfmapping.md`. The backend has been refactored, is running in the background, and comprehensive backend tests are in place. Data ingestion from `input.json`, PDF generation, asynchronous OJK query simulation, and placeholder pages are implemented.
+The current focus is on enhancing the PDF generation for the v0 mockup of the Ideb Checking application, currently in **Phase 2** of the plan outlined in `pdfmapping.md`. The backend has been refactored, is running in the background, and comprehensive backend tests are in place. Data ingestion from `input.json`, PDF generation, asynchronous OJK query simulation, and placeholder pages are implemented. The `TestCreateRequestHandler_LiveSearch` test has been fixed by refactoring `InputJSONPath` and `readFileFunc` to be passed as parameters, ensuring proper test isolation and concurrency handling.
 
 ## 2. Next Steps
 The immediate next steps are to build the core components of the v0 mockup:

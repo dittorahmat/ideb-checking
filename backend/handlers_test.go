@@ -59,12 +59,12 @@ func TestCreateRequestHandler_InternalSearch(t *testing.T) {
 	assert.NoError(t, err)
 	tempFile.Close()
 
-	InputJSONPath = tempFile.Name()
+	inputJSONPath := tempFile.Name()
 
 	// Mock readFileFunc
 	oldReadFileFunc := readFileFunc
 	readFileFunc = func(name string) ([]byte, error) {
-		if name == InputJSONPath {
+		if name == inputJSONPath {
 			return dummyInputJSON, nil
 		}
 		return oldReadFileFunc(name)
@@ -89,7 +89,9 @@ func TestCreateRequestHandler_InternalSearch(t *testing.T) {
 
 	// Record the response
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(createRequestHandler)
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		createRequest(w, r, inputJSONPath)
+	})
 
 	// Serve the request
 	handler.ServeHTTP(rr, req)
@@ -142,12 +144,12 @@ func TestCreateRequestHandler_LiveSearch(t *testing.T) {
 	assert.NoError(t, err)
 	tempFile.Close()
 
-	InputJSONPath = tempFile.Name()
+	inputJSONPath := tempFile.Name()
 
 	// Mock readFileFunc
 	oldReadFileFunc := readFileFunc
 	readFileFunc = func(name string) ([]byte, error) {
-		if name == InputJSONPath {
+		if name == inputJSONPath {
 			return dummyInputJSON, nil
 		}
 		return oldReadFileFunc(name)
@@ -173,7 +175,7 @@ func TestCreateRequestHandler_LiveSearch(t *testing.T) {
 	// Record the response
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		createRequest(w, r)
+		createRequest(w, r, inputJSONPath)
 	})
 
 	// Serve the request
