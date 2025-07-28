@@ -20,6 +20,9 @@ func setupTestDB() *gorm.DB {
 		panic("Failed to connect to test database")
 	}
 
+	// Drop existing tables to ensure a clean state for each test
+	db.Migrator().DropTable(&Request{}, &CorporateRequest{}, &GetIdeb{})
+
 	db.AutoMigrate(&Request{}, &CorporateRequest{}, &GetIdeb{})
 
 	return db
@@ -216,4 +219,92 @@ func TestLoginHandler(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, rr.Code)
 	assert.Equal(t, `{"status":"success"}`, rr.Body.String())
+}
+
+func TestGetDebtorExactIndividualHandler(t *testing.T) {
+	DB = setupTestDB()
+
+	// Insert dummy data
+	DB.Create(&Request{
+		BaseRequest: BaseRequest{
+			NomorReferensiPengguna:         "INDIVIDUAL1",
+			TujuanPenggunaan:               "Kredit",
+			NomorIdentitas:                 "12345",
+			PermintaanFasilitasOutstanding: true,
+			SearchType:                     SearchTypeInternal,
+			StatusAksi:                     "Selesai",
+		},
+		JenisIdentitas: "KTP",
+	})
+	DB.Create(&Request{
+		BaseRequest: BaseRequest{
+			NomorReferensiPengguna:         "INDIVIDUAL2",
+			TujuanPenggunaan:               "Kredit",
+			NomorIdentitas:                 "67890",
+			PermintaanFasilitasOutstanding: false,
+			SearchType:                     SearchTypeLive,
+			StatusAksi:                     "Dalam Proses",
+		},
+		JenisIdentitas: "SIM",
+	})
+
+	req, err := http.NewRequest("GET", "/api/getDebtorExactIndividual", nil)
+	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(getDebtorExactIndividualHandler)
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+
+	var requests []Request
+	err = json.Unmarshal(rr.Body.Bytes(), &requests)
+	assert.NoError(t, err)
+	assert.Len(t, requests, 2)
+	assert.Equal(t, "INDIVIDUAL1", requests[0].NomorReferensiPengguna)
+	assert.Equal(t, "INDIVIDUAL2", requests[1].NomorReferensiPengguna)
+}
+
+func TestGetDebtorExactCorporateHandler(t *testing.T) {
+	DB = setupTestDB()
+
+	// Insert dummy data
+	DB.Create(&CorporateRequest{
+		BaseRequest: BaseRequest{
+			NomorReferensiPengguna:         "CORPORATE1",
+			TujuanPenggunaan:               "Investasi",
+			NomorIdentitas:                 "112233",
+			PermintaanFasilitasOutstanding: true,
+			SearchType:                     SearchTypeInternal,
+			StatusAksi:                     "Selesai",
+		},
+	})
+	DB.Create(&CorporateRequest{
+		BaseRequest: BaseRequest{
+			NomorReferensiPengguna:         "CORPORATE2",
+			TujuanPenggunaan:               "Modal Kerja",
+			NomorIdentitas:                 "445566",
+			PermintaanFasilitasOutstanding: false,
+			SearchType:                     SearchTypeLive,
+			StatusAksi:                     "Dalam Proses",
+		},
+	})
+
+	req, err := http.NewRequest("GET", "/api/getDebtorExactCorporate", nil)
+	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(getDebtorExactCorporateHandler)
+
+	handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+
+	var requests []CorporateRequest
+	err = json.Unmarshal(rr.Body.Bytes(), &requests)
+	assert.NoError(t, err)
+	assert.Len(t, requests, 2)
+	assert.Equal(t, "CORPORATE1", requests[0].NomorReferensiPengguna)
+	assert.Equal(t, "CORPORATE2", requests[1].NomorReferensiPengguna)
 }
