@@ -7,7 +7,7 @@
     - A basic Go web server is running.
     - Dummy login endpoint (`/api/login`) is functional.
     - API endpoint (`/api/requests`) for creating and listing requests is implemented using GORM and connected to the database.
-    - **Refactoring:** `main.go` has been refactored into `database.go` (for DB initialization), `models.go` (for data structures), `handlers.go` (for HTTP handlers), and `routes.go` (for route registration) to improve modularity and maintainability.
+    - **Refactoring:** `main.go` has been refactored into `database.go` (for DB initialization), `models.go` (for data structures), `handlers.go` (for HTTP handlers), and `routes.go` (for route registration) to improve modularity and maintainability. CORS middleware has been implemented, `createRequest` has been refactored, and request structs have been unified.
 - **Frontend (HTML/JS/CSS):**
     - A basic user interface with a sidebar and content area is in place.
     - The default landing page after login is now `input-permintaan-badan-usaha.html`.
@@ -28,5 +28,5 @@
 
 ## 4. Known Issues
 - No real error handling is implemented on the frontend or backend beyond basic console logs and alerts.
-- Comprehensive unit and integration tests have been added for the backend Go application. However, some tests are currently failing due to the bug in the `createRequest` function for "live" search types.
+- Comprehensive unit and integration tests have been added for the backend Go application. The `TestCreateRequestHandler_LiveSearch` is currently failing because the `readFileFunc` mock isn't correctly applied within the goroutine, and `InputJSONPath` is not being correctly initialized for each test.
 - We are facing challenges with the `replace` tool due to its strict exact matching requirements, which has hindered efficient code modifications in `handlers.go`.

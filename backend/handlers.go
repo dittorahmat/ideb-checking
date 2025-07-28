@@ -18,6 +18,8 @@ import (
 	"gorm.io/gorm"
 )
 
+var readFileFunc = os.ReadFile
+
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	// Dummy login handler
 	w.WriteHeader(http.StatusOK)
@@ -81,7 +83,7 @@ func createRequest(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	case SearchTypeLive:
-		if err := handleLiveSearch(w, &req); err != nil {
+		if err := handleLiveSearch(w, &req, readFileFunc); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -97,7 +99,7 @@ func createRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleInternalSearch(w http.ResponseWriter, req *Request) error {
-	byteValue, err := os.ReadFile("../memory-bank/input.json")
+	byteValue, err := readFileFunc(InputJSONPath)
 	if err != nil {
 		return fmt.Errorf("Error reading input.json: %w", err)
 	}
@@ -129,13 +131,13 @@ func handleInternalSearch(w http.ResponseWriter, req *Request) error {
 	return nil
 }
 
-func handleLiveSearch(w http.ResponseWriter, req *Request) error {
+func handleLiveSearch(w http.ResponseWriter, req *Request, readFile func(string) ([]byte, error)) error {
 	req.StatusAksi = "Dalam Proses"
 	if result := DB.Create(req); result.Error != nil {
 		return result.Error
 	}
 
-	go func(requestID uint) {
+	go func(requestID uint, readFile func(string) ([]byte, error)) {
 		time.Sleep(5 * time.Second)
 
 		var updatedReq Request
@@ -143,7 +145,7 @@ func handleLiveSearch(w http.ResponseWriter, req *Request) error {
 			updatedReq.StatusAksi = "Selesai"
 			DB.Save(&updatedReq)
 
-			byteValue, err := os.ReadFile(InputJSONPath)
+			byteValue, err := readFile(InputJSONPath)
 			if err != nil {
 				log.Println("Error reading input.json for live simulation: ", err)
 				return
@@ -167,7 +169,7 @@ func handleLiveSearch(w http.ResponseWriter, req *Request) error {
 			}
 			DB.Create(&getIdebEntry)
 		}
-	}(req.ID)
+	}(req.ID, readFile)
 	return nil
 }
 
