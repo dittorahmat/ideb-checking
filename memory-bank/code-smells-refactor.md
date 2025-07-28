@@ -26,9 +26,11 @@
     *   **Description:** Previously, error handling was basic, relying on generic `respondWithError` calls.
     *   **Resolution:** Custom error types (`Error` struct and predefined error variables like `ErrNotFound`, `ErrInvalidInput`, etc.) have been introduced in `utils.go`. Handlers now return these specific error types, allowing for more granular error management and consistent API responses.
 
+## Resolved Code Smells:
+
 4.  **Configuration Loading in `main.go`:**
-    *   **Description:** The `NewConfig` function directly uses `os.Getenv` and hardcoded default values. While functional, for a more complex application, a dedicated configuration library (e.g., `viper`) could provide more flexibility (e.g., reading from config files, environment variables, command-line flags).
-    *   **Suggestion:** For v1, consider using a configuration library for more flexible and robust configuration management.
+    *   **Description:** Previously, the `NewConfig` function directly used `os.Getenv` and hardcoded default values, limiting flexibility.
+    *   **Resolution:** Integrated the `viper` library for configuration management. `NewConfig` now uses `viper` to load configuration values from `.env` files (if present) and environment variables, with sensible defaults. This provides a more flexible and robust configuration system.
 
 5.  **Static File Serving in `routes.go`:**
     *   **Description:** Serving static files directly from the Go backend is fine for a small mockup. In a production environment, it's often more efficient to serve static files via a dedicated web server (e.g., Nginx, Apache) or a CDN.
