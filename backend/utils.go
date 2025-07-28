@@ -11,6 +11,24 @@ type APIError struct {
 	Code    int    `json:"code"`
 }
 
+// Custom error types
+type Error struct {
+	Code    int
+	Message string
+}
+
+func (e *Error) Error() string {
+	return e.Message
+}
+
+var (
+	ErrNotFound      = &Error{Code: http.StatusNotFound, Message: "Resource not found"}
+	ErrInvalidInput  = &Error{Code: http.StatusBadRequest, Message: "Invalid input"}
+	ErrInternal      = &Error{Code: http.StatusInternalServerError, Message: "Internal server error"}
+	ErrUnauthorized  = &Error{Code: http.StatusUnauthorized, Message: "Unauthorized"}
+	ErrForbidden     = &Error{Code: http.StatusForbidden, Message: "Forbidden"}
+)
+
 // respondWithError sends a JSON error response with the given message and status code.
 func respondWithError(w http.ResponseWriter, code int, message string) {
 	respondWithJSON(w, code, APIError{Message: message, Code: code})

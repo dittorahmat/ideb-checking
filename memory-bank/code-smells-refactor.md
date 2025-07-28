@@ -20,9 +20,11 @@
     *   **Description:** Previously, `readFileFunc` was a global variable, which could lead to unexpected side effects and make testing harder.
     *   **Resolution:** `readFileFunc` has been refactored from a global variable to a field within the `App` struct. This improves testability and reduces reliance on global state by enabling dependency injection.
 
+## Resolved Code Smells:
+
 3.  **Error Handling (General):**
-    *   **Description:** The current error handling is basic (`respondWithError`, `log.Println`). For a production application (v1), a more robust and centralized error handling mechanism would be beneficial (e.g., custom error types, middleware for error logging and consistent error responses).
-    *   **Suggestion:** Implement custom error types and a centralized error handling middleware for v1.
+    *   **Description:** Previously, error handling was basic, relying on generic `respondWithError` calls.
+    *   **Resolution:** Custom error types (`Error` struct and predefined error variables like `ErrNotFound`, `ErrInvalidInput`, etc.) have been introduced in `utils.go`. Handlers now return these specific error types, allowing for more granular error management and consistent API responses.
 
 4.  **Configuration Loading in `main.go`:**
     *   **Description:** The `NewConfig` function directly uses `os.Getenv` and hardcoded default values. While functional, for a more complex application, a dedicated configuration library (e.g., `viper`) could provide more flexibility (e.g., reading from config files, environment variables, command-line flags).

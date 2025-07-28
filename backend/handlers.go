@@ -22,7 +22,7 @@ func (a *App) getRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	requestType, ok := vars["type"]
 	if !ok {
-		respondWithError(w, http.StatusBadRequest, "Request type is missing")
+		respondWithError(w, ErrInvalidInput.Code, ErrInvalidInput.Message)
 		return
 	}
 
@@ -33,7 +33,7 @@ func (a *App) getRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	case "corporate":
 		tableName = "getDebtorExactCorporate"
 	default:
-		respondWithError(w, http.StatusBadRequest, "Invalid request type")
+		respondWithError(w, ErrInvalidInput.Code, ErrInvalidInput.Message)
 		return
 	}
 
@@ -43,7 +43,7 @@ func (a *App) getRequestsHandler(w http.ResponseWriter, r *http.Request) {
 func (a *App) createRequestHandler(w http.ResponseWriter, r *http.Request) {
 	var genericPayload GenericRequestPayload
 	if err := json.NewDecoder(r.Body).Decode(&genericPayload); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		respondWithError(w, ErrInvalidInput.Code, ErrInvalidInput.Message)
 		return
 	}
 
@@ -57,7 +57,7 @@ func (a *App) createRequestHandler(w http.ResponseWriter, r *http.Request) {
 	case "individual":
 		var payload IndividualRequestPayload
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-			respondWithError(w, http.StatusBadRequest, "Invalid individual request payload")
+			respondWithError(w, ErrInvalidInput.Code, ErrInvalidInput.Message)
 			return
 		}
 		newReq = Request{
@@ -73,7 +73,7 @@ func (a *App) createRequestHandler(w http.ResponseWriter, r *http.Request) {
 	case "corporate":
 		var payload CorporateRequestPayload
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-			respondWithError(w, http.StatusBadRequest, "Invalid corporate request payload")
+			respondWithError(w, ErrInvalidInput.Code, ErrInvalidInput.Message)
 			return
 		}
 		newReq = CorporateRequest{
@@ -86,7 +86,7 @@ func (a *App) createRequestHandler(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 	default:
-		respondWithError(w, http.StatusBadRequest, "Invalid request type")
+		respondWithError(w, ErrInvalidInput.Code, ErrInvalidInput.Message)
 		return
 	}
 
@@ -96,36 +96,36 @@ func (a *App) createRequestHandler(w http.ResponseWriter, r *http.Request) {
 		switch v.SearchType {
 		case SearchTypeInternal:
 			if err := a.handleInternalSearch(&v); err != nil {
-				respondWithError(w, http.StatusInternalServerError, "Internal server error processing individual internal search")
+				respondWithError(w, ErrInternal.Code, ErrInternal.Message)
 				return
 			}
 		case SearchTypeLive:
 			if err := a.handleLiveSearch(&v); err != nil {
-				respondWithError(w, http.StatusInternalServerError, "Internal server error processing individual live search")
+				respondWithError(w, ErrInternal.Code, ErrInternal.Message)
 				return
 			}
 		default:
-			respondWithError(w, http.StatusBadRequest, "Invalid search type for individual request")
+			respondWithError(w, ErrInvalidInput.Code, ErrInvalidInput.Message)
 			return
 		}
 	case CorporateRequest:
 		switch v.SearchType {
 		case SearchTypeInternal:
 			if err := a.handleInternalSearch(&v); err != nil {
-				respondWithError(w, http.StatusInternalServerError, "Internal server error processing corporate internal search")
+				respondWithError(w, ErrInternal.Code, ErrInternal.Message)
 				return
 			}
 		case SearchTypeLive:
 			if err := a.handleLiveSearch(&v); err != nil {
-				respondWithError(w, http.StatusInternalServerError, "Internal server error processing corporate live search")
+				respondWithError(w, ErrInternal.Code, ErrInternal.Message)
 				return
 			}
 		default:
-			respondWithError(w, http.StatusBadRequest, "Invalid search type for corporate request")
+			respondWithError(w, ErrInvalidInput.Code, ErrInvalidInput.Message)
 			return
 		}
 	default:
-		respondWithError(w, http.StatusInternalServerError, "Unknown request type")
+		respondWithError(w, ErrInternal.Code, ErrInternal.Message)
 		return
 	}
 
