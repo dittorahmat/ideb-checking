@@ -41,32 +41,98 @@ func (a *App) getRequestsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) createRequestHandler(w http.ResponseWriter, r *http.Request) {
-	var req Request
-			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	var genericPayload GenericRequestPayload
+	if err := json.NewDecoder(r.Body).Decode(&genericPayload); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
-	switch req.SearchType {
-	case SearchTypeInternal:
-		if err := a.handleInternalSearch(&req); err != nil {
-			respondWithError(w, http.StatusInternalServerError, "Internal server error processing internal search")
+	// Re-read the body for specific unmarshalling
+	r.Body.Close()
+	r.Body = http.MaxBytesReader(w, r.Body, 1048576) // 1MB limit
+
+	var newReq interface{}
+
+	switch genericPayload.RequestType {
+	case "individual":
+		var payload IndividualRequestPayload
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			respondWithError(w, http.StatusBadRequest, "Invalid individual request payload")
 			return
 		}
-	case SearchTypeLive:
-		if err := a.handleLiveSearch(&req); err != nil {
-			respondWithError(w, http.StatusInternalServerError, "Internal server error processing live search")
+		newReq = Request{
+			BaseRequest: BaseRequest{
+				NomorReferensiPengguna:         payload.NomorReferensiPengguna,
+				TujuanPenggunaan:               payload.TujuanPenggunaan,
+				NomorIdentitas:                 payload.NomorIdentitas,
+				PermintaanFasilitasOutstanding: payload.PermintaanFasilitasOutstanding,
+				SearchType:                     payload.SearchType,
+			},
+			JenisIdentitas: payload.JenisIdentitas,
+		}
+	case "corporate":
+		var payload CorporateRequestPayload
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			respondWithError(w, http.StatusBadRequest, "Invalid corporate request payload")
 			return
+		}
+		newReq = CorporateRequest{
+			BaseRequest: BaseRequest{
+				NomorReferensiPengguna:         payload.NomorReferensiPengguna,
+				TujuanPenggunaan:               payload.TujuanPenggunaan,
+				NomorIdentitas:                 payload.NomorIdentitas,
+				PermintaanFasilitasOutstanding: payload.PermintaanFasilitasOutstanding,
+				SearchType:                     payload.SearchType,
+			},
 		}
 	default:
-		respondWithError(w, http.StatusBadRequest, "Invalid search type")
+		respondWithError(w, http.StatusBadRequest, "Invalid request type")
 		return
 	}
 
-	respondWithJSON(w, http.StatusCreated, req)
+	// Handle search type based on the actual request object
+	switch v := newReq.(type) {
+	case Request:
+		switch v.SearchType {
+		case SearchTypeInternal:
+			if err := a.handleInternalSearch(&v); err != nil {
+				respondWithError(w, http.StatusInternalServerError, "Internal server error processing individual internal search")
+				return
+			}
+		case SearchTypeLive:
+			if err := a.handleLiveSearch(&v); err != nil {
+				respondWithError(w, http.StatusInternalServerError, "Internal server error processing individual live search")
+				return
+			}
+		default:
+			respondWithError(w, http.StatusBadRequest, "Invalid search type for individual request")
+			return
+		}
+	case CorporateRequest:
+		switch v.SearchType {
+		case SearchTypeInternal:
+			if err := a.handleInternalSearch(&v); err != nil {
+				respondWithError(w, http.StatusInternalServerError, "Internal server error processing corporate internal search")
+				return
+			}
+		case SearchTypeLive:
+			if err := a.handleLiveSearch(&v); err != nil {
+				respondWithError(w, http.StatusInternalServerError, "Internal server error processing corporate live search")
+				return
+			}
+		default:
+			respondWithError(w, http.StatusBadRequest, "Invalid search type for corporate request")
+			return
+		}
+	default:
+		respondWithError(w, http.StatusInternalServerError, "Unknown request type")
+		return
+	}
+
+	respondWithJSON(w, http.StatusCreated, newReq)
 }
 
-func (a *App) handleInternalSearch(req *Request) error {
+func (a *App) handleInternalSearch(req interface{}) error {
 	inputData, err := a.readAndUnmarshalInputJSON(a.Config.InputJSONPath)
 	if err != nil {
 		return err
@@ -87,9 +153,19 @@ func (a *App) handleInternalSearch(req *Request) error {
 		return fmt.Errorf("Error saving to get_idebs table: %w", result.Error)
 	}
 
-	req.StatusAksi = "Selesai"
-	if result := a.DB.Save(req); result.Error != nil {
-		return fmt.Errorf("Error updating request status: %w", result.Error)
+	switch r := req.(type) {
+	case *Request:
+		r.StatusAksi = "Selesai"
+		if result := a.DB.Save(r); result.Error != nil {
+			return fmt.Errorf("Error updating individual request status: %w", result.Error)
+		}
+	case *CorporateRequest:
+		r.StatusAksi = "Selesai"
+		if result := a.DB.Save(r); result.Error != nil {
+			return fmt.Errorf("Error updating corporate request status: %w", result.Error)
+		}
+	default:
+		return fmt.Errorf("Unsupported request type for handleInternalSearch")
 	}
 	return nil
 }
@@ -109,39 +185,77 @@ func (a *App) readAndUnmarshalInputJSON(filePath string) (*InputJSON, error) {
 	return &inputData, nil
 }
 
-func (a *App) handleLiveSearch(req *Request) error {
-	req.StatusAksi = "Dalam Proses"
-	if result := a.DB.Create(req); result.Error != nil {
-		return result.Error
-	}
-
-	go func(requestID uint) {
-		time.Sleep(5 * time.Second)
-
-		var updatedReq Request
-		if result := a.DB.First(&updatedReq, requestID); result.Error == nil {
-			updatedReq.StatusAksi = "Selesai"
-			a.DB.Save(&updatedReq)
-
-			inputData, err := a.readAndUnmarshalInputJSON(a.Config.InputJSONPath)
-			if err != nil {
-				log.Println("Error reading and unmarshalling input.json for live simulation: ", err)
-				return
-			}
-
-			var nomorIdentitas string
-			if len(inputData.Data.Corporate.CorporateDebtors) > 0 {
-				nomorIdentitas = inputData.Data.Corporate.CorporateDebtors[0].TaxId
-			}
-
-			getIdebEntry := GetIdeb{
-				NomorReferensiPengguna: inputData.Data.Header.UserReferenceCode,
-				NomorIdentitas:         nomorIdentitas,
-				Data:                   string(inputData.RawData),
-			}
-			a.DB.Create(&getIdebEntry)
+func (a *App) handleLiveSearch(req interface{}) error {
+	switch r := req.(type) {
+	case *Request:
+		r.StatusAksi = "Dalam Proses"
+		if result := a.DB.Create(r); result.Error != nil {
+			return result.Error
 		}
-	}(req.ID)
+
+		go func(requestID uint) {
+			time.Sleep(5 * time.Second)
+
+			var updatedReq Request
+			if result := a.DB.First(&updatedReq, requestID); result.Error == nil {
+				updatedReq.StatusAksi = "Selesai"
+				a.DB.Save(&updatedReq)
+
+				inputData, err := a.readAndUnmarshalInputJSON(a.Config.InputJSONPath)
+				if err != nil {
+					log.Println("Error reading and unmarshalling input.json for live simulation: ", err)
+					return
+				}
+
+				var nomorIdentitas string
+				if len(inputData.Data.Corporate.CorporateDebtors) > 0 {
+					nomorIdentitas = inputData.Data.Corporate.CorporateDebtors[0].TaxId
+				}
+
+				getIdebEntry := GetIdeb{
+					NomorReferensiPengguna: inputData.Data.Header.UserReferenceCode,
+					NomorIdentitas:         nomorIdentitas,
+					Data:                   string(inputData.RawData),
+				}
+				a.DB.Create(&getIdebEntry)
+			}
+		}(r.ID)
+	case *CorporateRequest:
+		r.StatusAksi = "Dalam Proses"
+		if result := a.DB.Create(r); result.Error != nil {
+			return result.Error
+		}
+
+		go func(requestID uint) {
+			time.Sleep(5 * time.Second)
+
+			var updatedReq CorporateRequest
+			if result := a.DB.First(&updatedReq, requestID); result.Error == nil {
+				updatedReq.StatusAksi = "Selesai"
+				a.DB.Save(&updatedReq)
+
+				inputData, err := a.readAndUnmarshalInputJSON(a.Config.InputJSONPath)
+				if err != nil {
+					log.Println("Error reading and unmarshalling input.json for live simulation: ", err)
+					return
+				}
+
+				var nomorIdentitas string
+				if len(inputData.Data.Corporate.CorporateDebtors) > 0 {
+					nomorIdentitas = inputData.Data.Corporate.CorporateDebtors[0].TaxId
+				}
+
+				getIdebEntry := GetIdeb{
+					NomorReferensiPengguna: inputData.Data.Header.UserReferenceCode,
+					NomorIdentitas:         nomorIdentitas,
+					Data:                   string(inputData.RawData),
+				}
+				a.DB.Create(&getIdebEntry)
+			}
+		}(r.ID)
+	default:
+		return fmt.Errorf("Unsupported request type for handleLiveSearch")
+	}
 	return nil
 }
 

@@ -8,11 +8,13 @@
 2.  **Long Function in `handlers.go` (`generatePDFHandler`):**
     The `generatePDFHandler` function was lengthy and performed multiple responsibilities. This has been resolved by extracting the PDF generation logic into a new `pdf.go` file and the `generateIdebPDF` function.
 
-## Remaining Code Smells & Areas for Future Refactoring:
+## Resolved Code Smells:
 
 1.  **Inconsistent Naming/Usage of `Request` and `CorporateRequest` Models:**
-    *   **Description:** The `Request` struct is used for both individual and corporate requests in `createRequestHandler`, but `Request` and `CorporateRequest` have distinct `TableName()` methods. This can lead to confusion or issues if the application grows and these models diverge more significantly.
-    *   **Suggestion:** For v1, consider having separate request DTOs (Data Transfer Objects) for individual and corporate requests, and then mapping them to a unified internal `Request` model if the underlying database table is indeed unified. Alternatively, if they truly map to different tables, ensure the API endpoints and handling clearly distinguish between them from the start.
+    *   **Description:** Previously, the `Request` struct was used for both individual and corporate requests in `createRequestHandler`, despite `Request` and `CorporateRequest` having distinct `TableName()` methods. This led to potential confusion and data inconsistencies.
+    *   **Resolution:** Introduced separate DTOs (`IndividualRequestPayload` and `CorporateRequestPayload`) for individual and corporate requests. `createRequestHandler` now unmarshals incoming requests into the appropriate DTO based on a `request_type` field in the payload. The `handleInternalSearch` and `handleLiveSearch` functions were updated to accept `interface{}` and handle both `*Request` and `*CorporateRequest` types, ensuring correct data handling and persistence.
+
+## Remaining Code Smells & Areas for Future Refactoring:
 
 2.  **Global Variable `readFileFunc` in `handlers.go`:**
     *   **Description:** While it aids testing, `readFileFunc` is a global variable. Global state can make code harder to reason about and can introduce unexpected side effects in larger applications.

@@ -48,11 +48,16 @@ function submitIdebRequest(formId) {
     const formData = {
         nomor_referensi_pengguna: form.querySelector('[id^="nomor_referensi_pengguna"]').value,
         tujuan_penggunaan: form.querySelector('[id^="tujuan_penggunaan"]').value,
-        jenis_identitas: form.querySelector('[id^="jenis_identitas"]').value,
         nomor_identitas: form.querySelector('[id^="nomor_identitas"]').value,
         permintaan_fasilitas_outstanding: form.querySelector('[id^="permintaan_fasilitas_outstanding"]').checked,
-        search_type: form.querySelector('input[name^="search_type"]:checked').value
+        search_type: form.querySelector('input[name^="search_type"]:checked').value,
+        request_type: formId.includes("individual") ? "individual" : "corporate"
     };
+
+    // Add jenis_identitas only for individual requests
+    if (formId.includes("individual")) {
+        formData.jenis_identitas = form.querySelector('[id^="jenis_identitas"]').value;
+    }
 
     fetch('/api/requests', {
         method: 'POST',

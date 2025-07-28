@@ -34,6 +34,30 @@ func (CorporateRequest) TableName() string {
 	return "getDebtorExactCorporate"
 }
 
+// IndividualRequestPayload represents the expected payload for individual requests
+type IndividualRequestPayload struct {
+	NomorReferensiPengguna         string `json:"nomor_referensi_pengguna"`
+	TujuanPenggunaan               string `json:"tujuan_penggunaan"`
+	JenisIdentitas                 string `json:"jenis_identitas"`
+	NomorIdentitas                 string `json:"nomor_identitas"`
+	PermintaanFasilitasOutstanding bool   `json:"permintaan_fasilitas_outstanding"`
+	SearchType                     string `json:"search_type"`
+}
+
+// CorporateRequestPayload represents the expected payload for corporate requests
+type CorporateRequestPayload struct {
+	NomorReferensiPengguna         string `json:"nomor_referensi_pengguna"`
+	TujuanPenggunaan               string `json:"tujuan_penggunaan"`
+	NomorIdentitas                 string `json:"nomor_identitas"`
+	PermintaanFasilitasOutstanding bool   `json:"permintaan_fasilitas_outstanding"`
+	SearchType                     string `json:"search_type"`
+}
+
+// GenericRequestPayload is used to determine the type of request before unmarshalling to specific DTOs
+type GenericRequestPayload struct {
+	RequestType string `json:"request_type"`
+}
+
 type GetIdeb struct {
 	gorm.Model
 	NomorReferensiPengguna string `json:"nomor_referensi_pengguna"`
