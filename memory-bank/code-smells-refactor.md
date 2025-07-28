@@ -14,11 +14,11 @@
     *   **Description:** Previously, the `Request` struct was used for both individual and corporate requests in `createRequestHandler`, despite `Request` and `CorporateRequest` having distinct `TableName()` methods. This led to potential confusion and data inconsistencies.
     *   **Resolution:** Introduced separate DTOs (`IndividualRequestPayload` and `CorporateRequestPayload`) for individual and corporate requests. `createRequestHandler` now unmarshals incoming requests into the appropriate DTO based on a `request_type` field in the payload. The `handleInternalSearch` and `handleLiveSearch` functions were updated to accept `interface{}` and handle both `*Request` and `*CorporateRequest` types, ensuring correct data handling and persistence.
 
-## Remaining Code Smells & Areas for Future Refactoring:
+## Resolved Code Smells:
 
 2.  **Global Variable `readFileFunc` in `handlers.go`:**
-    *   **Description:** While it aids testing, `readFileFunc` is a global variable. Global state can make code harder to reason about and can introduce unexpected side effects in larger applications.
-    *   **Suggestion:** For v1, consider dependency injection for `readFileFunc` (e.g., passing it as a parameter to `App` or to the handlers that need it).
+    *   **Description:** Previously, `readFileFunc` was a global variable, which could lead to unexpected side effects and make testing harder.
+    *   **Resolution:** `readFileFunc` has been refactored from a global variable to a field within the `App` struct. This improves testability and reduces reliance on global state by enabling dependency injection.
 
 3.  **Error Handling (General):**
     *   **Description:** The current error handling is basic (`respondWithError`, `log.Println`). For a production application (v1), a more robust and centralized error handling mechanism would be beneficial (e.g., custom error types, middleware for error logging and consistent error responses).
