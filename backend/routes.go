@@ -1,17 +1,19 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+)
 
-func RegisterRoutes(inputJSONPath string) {
-	// Serve static files from the "frontend" directory
+func (a *App) RegisterRoutes() {
+	// API routes
+	a.Router.HandleFunc("/api/login", a.loginHandler).Methods("POST", "OPTIONS")
+	a.Router.HandleFunc("/api/requests", a.createRequestHandler).Methods("POST", "OPTIONS")
+	a.Router.HandleFunc("/api/requests/{type}", a.getRequestsHandler).Methods("GET", "OPTIONS")
+	a.Router.HandleFunc("/api/generate-pdf", a.generatePDFHandler).Methods("GET", "OPTIONS")
+
+	// Serve static files from the "frontend" directory directly from the root
 	fs := http.FileServer(http.Dir("../frontend"))
-	http.Handle("/", fs)
+	a.Router.PathPrefix("/").Handler(fs)
 
-	http.HandleFunc("/api/login", CORSMiddleware(loginHandler))
-	http.HandleFunc("/api/requests", CORSMiddleware(func(w http.ResponseWriter, r *http.Request) {
-		createRequestHandler(w, r)
-	}))
-	http.HandleFunc("/api/getDebtorExactIndividual", CORSMiddleware(getDebtorExactIndividualHandler))
-	http.HandleFunc("/api/getDebtorExactCorporate", CORSMiddleware(getDebtorExactCorporateHandler))
-	http.HandleFunc("/api/generate-pdf", CORSMiddleware(generatePDFHandler))
+	a.Router.Use(CORSMiddleware)
 }

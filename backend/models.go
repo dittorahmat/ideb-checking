@@ -47,10 +47,11 @@ func (GetIdeb) TableName() string {
 
 // Structs for parsing input.json
 type InputJSON struct {
-	Code   string `json:"code"`
-	Status string `json:"status"`
-	Remark string `json:"remark"`
-	Data   struct {
+	Code    string `json:"code"`
+	Status  string `json:"status"`
+	Remark  string `json:"remark"`
+	RawData []byte `json:"-"` // To store the raw JSON data
+	Data    struct {
 		Header    Header    `json:"header"`
 		Corporate Corporate `json:"corporate"`
 	} `json:"data"`

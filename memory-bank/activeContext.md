@@ -1,27 +1,18 @@
 # Active Context
 
 ## 1. Current Work Focus
-The current focus is on enhancing the PDF generation for the v0 mockup of the Ideb Checking application, currently in **Phase 2** of the plan outlined in `pdfmapping.md`. The backend has been refactored, is running in the background, and comprehensive backend tests are in place. Data ingestion from `input.json`, PDF generation, asynchronous OJK query simulation, and placeholder pages are implemented. The `TestCreateRequestHandler_LiveSearch` test has been fixed by refactoring `InputJSONPath` and `readFileFunc` to be passed as parameters, ensuring proper test isolation and concurrency handling.
+The current focus is on improving the backend's maintainability and robustness by addressing identified code smells. `readFileFunc` has been refactored from a global variable to a field within the `App` struct, and error handling has been enhanced using a custom `APIError` struct with more generic error messages. Comprehensive backend tests are in place, and new unit tests have been added for helper functions.
 
 ## 2. Next Steps
-The immediate next steps are to build the core components of the v0 mockup:
-1.  **Project Scaffolding:** Create the directory structure for the monorepo (e.g., `/frontend`, `/backend`).
-2.  **Database Setup:** Define the SQL schema for the tables based on the provided JSON sample and create the initial SQLite database file, including the `get_idebs` table.
-3.  **Backend API (Go):**
-    - Create a basic web server using the `net/http` package.
-    - Implement the dummy login endpoint.
-    - Implement the endpoint to receive new IDEB requests and save them to the database using GORM, including ingestion of `input.json` data for "internal" search types and asynchronous simulation for "live" search types (the `readFileFunc` mocking for the goroutine in live search is currently causing test failures).
-    - Implement the endpoint to list all existing requests using GORM.
-    - Implement PDF generation from `get_idebs` table data, with Phase 3 (Detailed Shareholder Information and Layout Refinements) complete.
-    - **Refactoring:** `main.go` has been refactored into `database.go` (for DB initialization), `models.go` (for data structures), `handlers.go` (for HTTP handlers), and `routes.go` (for route registration) to improve modularity and maintainability. CORS middleware has been implemented, `createRequest` has been refactored, and request structs have been unified.
-4.  **Frontend (HTML/Bootstrap):**
-    - Create the main `index.html` with the sidebar navigation.
-    - Build the dummy login page.
-    - Build the "Input Permintaan IDeb" form, with "internal" search type correctly submitting data.
-    - Build the "Daftar Permintaan IDeb" page to display request statuses, with "Lihat Detail" linking to PDF generation.
-    - Implement placeholder pages for Dashboard, Parameter, and User Management.
+All backend tests are now passing. The next phase will focus on UI/UX refinements for the frontend.
 
 ## 3. Key Decisions & Considerations
-- **Dummy Data:** For v0, we will use hardcoded or easily generated dummy data for responses. The provided JSON sample will be used to model the database structure.
-- **PDF Generation:** A simple Go library for PDF generation will be chosen. The focus will be on functionality over complex formatting for v0.
-- **Error Handling:** Basic error handling will be implemented for API calls, but comprehensive error management is deferred to v1.
+- **Dependency Injection:** `readFileFunc` is now a dependency injected into the `App` struct, improving testability and reducing reliance on global state.
+- **Structured Error Handling:** Introduced `APIError` for more consistent and informative error responses, laying the groundwork for future robust error management.
+- **Prioritization:** Focused on `readFileFunc` and error handling refactoring for v0. Other identified areas (model inconsistency, configuration loading, static file serving) are deferred to v1 due to their larger architectural impact.
+
+## 4. Problems Faced
+- **Resolved:** Persistent syntax errors in `handlers_test.go` have been resolved through manual cleanup and careful escaping of string literals. All backend tests are now passing.
+
+## 5. Immediate Plan to Resolve Problems
+- **Resolved:** The plan to resolve persistent syntax errors in `handlers_test.go` has been successfully executed. All tests are now passing.

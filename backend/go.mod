@@ -9,6 +9,7 @@ require (
 )
 
 require (
+	github.com/gorilla/mux v1.8.1
 	github.com/johnfercher/maroto/v2 v2.3.1
 	github.com/stretchr/testify v1.10.0
 )

@@ -1,7 +1,3 @@
-document.addEventListener('DOMContentLoaded', (event) => {
-    // App starts with login view
-});
-
 function login() {
     fetch('/api/login', { method: 'POST' })
         .then(response => response.json())

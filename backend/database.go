@@ -1,23 +1,20 @@
 package main
 
 import (
-	"log"
-
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
-var DB *gorm.DB
-
-func InitDatabase() {
-	var err error
-	DB, err = gorm.Open(sqlite.Open("./ideb.db"), &gorm.Config{})
+func InitDatabase(dbPath string) (*gorm.DB, error) {
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
-		log.Fatal("failed to connect database", err)
+		return nil, err
 	}
 
 	// Migrate the schema
-	if err := DB.AutoMigrate(&Request{}, &CorporateRequest{}, &GetIdeb{}); err != nil {
-		log.Fatalf("failed to migrate database: %v", err)
+	if err := db.AutoMigrate(&Request{}, &CorporateRequest{}, &GetIdeb{}); err != nil {
+		return nil, err
 	}
+
+	return db, nil
 }
