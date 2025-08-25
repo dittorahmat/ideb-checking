@@ -37,7 +37,7 @@ For v1, this architecture will be maintained but deployed as a single unit withi
 To improve modularity and maintainability, the Go backend application has been refactored into the following files:
 
 - **`main.go`**
-    - **Description:** The entry point of the application. It initializes the database and registers all HTTP routes.
+    - **Description:** The entry point of the application. It initializes the configuration using `viper` and `.env` files, initializes the database, and registers all HTTP routes.
     - **Key Functions:** `main()`
 
 - **`database.go`**

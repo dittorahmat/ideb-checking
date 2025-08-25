@@ -94,6 +94,8 @@ The application addresses the challenge of slow data retrieval from the SLIK OJK
 
 ## Setup and Running the Application
 
+### Running with Go directly
+
 1.  **Clone the repository:**
     ```bash
     git clone <repository_url>
@@ -117,3 +119,38 @@ The application addresses the challenge of slow data retrieval from the SLIK OJK
 
 4.  **Login:**
     Use any email and password to log in (e.g., `test@example.com`, `password`). After successful login, you will be redirected to the "Input Permintaan IDeb - Badan Usaha" page.
+
+### Running with Docker
+
+1.  **Build and run with Docker:**
+    ```bash
+    # Build the Docker image
+    docker build -t ideb-app .
+    
+    # Run the container
+    docker run -d -p 8080:8080 --name ideb-container ideb-app
+    ```
+
+2.  **Or use Docker Compose (recommended):**
+    ```bash
+    # Build and run with docker-compose
+    docker-compose up -d
+    ```
+
+3.  **Access the Frontend:**
+    Open your web browser and navigate to `http://localhost:8080`.
+
+4.  **Login:**
+    Use any email and password to log in (e.g., `test@example.com`, `password`).
+
+### Stopping the Docker Container
+
+- If using Docker directly:
+  ```bash
+  docker stop ideb-container
+  ```
+
+- If using Docker Compose:
+  ```bash
+  docker-compose down
+  ```

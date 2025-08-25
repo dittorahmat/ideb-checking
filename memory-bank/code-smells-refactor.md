@@ -30,7 +30,7 @@
 
 4.  **Configuration Loading in `main.go`:**
     *   **Description:** Previously, the `NewConfig` function directly used `os.Getenv` and hardcoded default values, limiting flexibility.
-    *   **Resolution:** Integrated the `viper` library for configuration management. `NewConfig` now uses `viper` to load configuration values from `.env` files (if present) and environment variables, with sensible defaults. This provides a more flexible and robust configuration system.
+    *   **Resolution:** Integrated the `viper` library for configuration management. `NewConfig` now uses `viper` with the `dotenv` configuration type to load configuration values specifically from `.env` files and environment variables, with sensible defaults. This provides a more flexible and robust configuration system tailored for environment-based setups.
 
 5.  **Static File Serving in `routes.go`:**
     *   **Description:** Serving static files directly from the Go backend is fine for a small mockup. In a production environment, it's often more efficient to serve static files via a dedicated web server (e.g., Nginx, Apache) or a CDN.

@@ -1,0 +1,20 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+README.md
+GEMINI.md
+commit_message.txt
+
+# Memory bank (except for necessary files)
+memory-bank/
+!memory-bank/input.json

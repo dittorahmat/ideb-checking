@@ -1,13 +1,8 @@
-docs: Update README and systemPatterns to reflect current app state
+refactor: Use .env for configuration loading
 
-Updated README.md and memory-bank/systemPatterns.md to reflect the latest changes in the application, including refactored backend structure, updated API endpoints, and corrected static file serving.
+This commit updates the application to use .env files for configuration loading instead of config.yaml.
 
-- **README.md:**
-    - Updated 'Implemented Features' to reflect the new API endpoint for request listing (`/api/requests/{type}`).
-    - Updated 'Technology Stack' to include `gorilla/mux` and `gorm.io/driver/sqlite` for the backend.
-    - Updated 'Project Structure' to accurately list all backend and frontend files.
-    - Corrected 'Setup and Running the Application' instructions for running the backend.
-- **memory-bank/systemPatterns.md:**
-    - Updated 'Data Flow' to reflect the new API endpoint for fetching requests (`/api/requests/{type}`).
-    - Updated 'Key Components' to reflect the new API endpoint for request listing and the new `pdf.go` file.
-    - Updated 'Backend Go Application Structure (Refactored)' to include `pdf.go` and provide more detailed descriptions for `handlers.go` and `routes.go`.
+- **Updated `backend/main.go`:** Modified `NewConfig` to use `viper` with `dotenv` type and look for `.env` file.
+- **Deleted `config.yaml`:** Removed the old configuration file.
+- **Updated `.env`:** Added `INPUT_JSON_PATH`, `DB_PATH`, and `SERVER_PORT` to the `.env` file.
+- **Updated `memory-bank/code-smells-refactor.md`:** Reflected the change in configuration loading method.
