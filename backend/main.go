@@ -44,7 +44,7 @@ func NewConfig() (*Config, error) {
 	}
 
 	// Set defaults if not found in config file or environment variables
-	v.SetDefault("INPUT_JSON_PATH", "memory-bank/input.json")
+	v.SetDefault("INPUT_JSON_PATH", "../memory-bank/input.json")
 	v.SetDefault("DB_PATH", "ideb.db")
 	v.SetDefault("SERVER_PORT", "8080")
 

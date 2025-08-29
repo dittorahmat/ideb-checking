@@ -41,25 +41,16 @@ func (a *App) getRequestsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) createRequestHandler(w http.ResponseWriter, r *http.Request) {
-	var genericPayload GenericRequestPayload
-	if err := json.NewDecoder(r.Body).Decode(&genericPayload); err != nil {
-		respondWithError(w, ErrInvalidInput.Code, ErrInvalidInput.Message)
+	var payload CombinedRequestPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		respondWithError(w, ErrInvalidInput.Code, err.Error())
 		return
 	}
 
-	// Re-read the body for specific unmarshalling
-	r.Body.Close()
-	r.Body = http.MaxBytesReader(w, r.Body, 1048576) // 1MB limit
-
 	var newReq interface{}
 
-	switch genericPayload.RequestType {
+	switch payload.RequestType {
 	case "individual":
-		var payload IndividualRequestPayload
-		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-			respondWithError(w, ErrInvalidInput.Code, ErrInvalidInput.Message)
-			return
-		}
 		newReq = Request{
 			BaseRequest: BaseRequest{
 				NomorReferensiPengguna:         payload.NomorReferensiPengguna,
@@ -71,11 +62,6 @@ func (a *App) createRequestHandler(w http.ResponseWriter, r *http.Request) {
 			JenisIdentitas: payload.JenisIdentitas,
 		}
 	case "corporate":
-		var payload CorporateRequestPayload
-		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-			respondWithError(w, ErrInvalidInput.Code, ErrInvalidInput.Message)
-			return
-		}
 		newReq = CorporateRequest{
 			BaseRequest: BaseRequest{
 				NomorReferensiPengguna:         payload.NomorReferensiPengguna,
@@ -86,7 +72,7 @@ func (a *App) createRequestHandler(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 	default:
-		respondWithError(w, ErrInvalidInput.Code, ErrInvalidInput.Message)
+		respondWithError(w, ErrInvalidInput.Code, "Invalid request_type")
 		return
 	}
 
@@ -96,12 +82,12 @@ func (a *App) createRequestHandler(w http.ResponseWriter, r *http.Request) {
 		switch v.SearchType {
 		case SearchTypeInternal:
 			if err := a.handleInternalSearch(&v); err != nil {
-				respondWithError(w, ErrInternal.Code, ErrInternal.Message)
+				respondWithError(w, ErrInternal.Code, err.Error())
 				return
 			}
 		case SearchTypeLive:
 			if err := a.handleLiveSearch(&v); err != nil {
-				respondWithError(w, ErrInternal.Code, ErrInternal.Message)
+				respondWithError(w, ErrInternal.Code, err.Error())
 				return
 			}
 		default:
@@ -112,12 +98,12 @@ func (a *App) createRequestHandler(w http.ResponseWriter, r *http.Request) {
 		switch v.SearchType {
 		case SearchTypeInternal:
 			if err := a.handleInternalSearch(&v); err != nil {
-				respondWithError(w, ErrInternal.Code, ErrInternal.Message)
+				respondWithError(w, ErrInternal.Code, err.Error())
 				return
 			}
 		case SearchTypeLive:
 			if err := a.handleLiveSearch(&v); err != nil {
-				respondWithError(w, ErrInternal.Code, ErrInternal.Message)
+				respondWithError(w, ErrInternal.Code, err.Error())
 				return
 			}
 		default:
@@ -156,13 +142,13 @@ func (a *App) handleInternalSearch(req interface{}) error {
 	switch r := req.(type) {
 	case *Request:
 		r.StatusAksi = "Selesai"
-		if result := a.DB.Save(r); result.Error != nil {
-			return fmt.Errorf("Error updating individual request status: %w", result.Error)
+		if result := a.DB.Create(r); result.Error != nil {
+			return fmt.Errorf("Error creating individual request: %w", result.Error)
 		}
 	case *CorporateRequest:
 		r.StatusAksi = "Selesai"
-		if result := a.DB.Save(r); result.Error != nil {
-			return fmt.Errorf("Error updating corporate request status: %w", result.Error)
+		if result := a.DB.Create(r); result.Error != nil {
+			return fmt.Errorf("Error creating corporate request: %w", result.Error)
 		}
 	default:
 		return fmt.Errorf("Unsupported request type for handleInternalSearch")
@@ -260,13 +246,33 @@ func (a *App) handleLiveSearch(req interface{}) error {
 }
 
 func (a *App) getRequests(w http.ResponseWriter, r *http.Request, tableName string) {
-	var requests []Request
-	if result := a.DB.Table(tableName).Find(&requests); result.Error != nil {
-		respondWithError(w, http.StatusInternalServerError, "Error retrieving requests")
+	var results interface{}
+	var err error
+
+	switch tableName {
+	case "getDebtorExactIndividual":
+		var requests []Request
+		if result := a.DB.Table(tableName).Find(&requests); result.Error != nil {
+			err = result.Error
+		}
+		results = requests
+	case "getDebtorExactCorporate":
+		var requests []CorporateRequest
+		if result := a.DB.Table(tableName).Find(&requests); result.Error != nil {
+			err = result.Error
+		}
+		results = requests
+	default:
+		respondWithError(w, http.StatusBadRequest, "Invalid table name")
 		return
 	}
 
-	respondWithJSON(w, http.StatusOK, requests)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error retrieving requests: "+err.Error())
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, results)
 }
 
 func (a *App) generatePDFHandler(w http.ResponseWriter, r *http.Request) {
@@ -277,9 +283,15 @@ func (a *App) generatePDFHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var request CorporateRequest
+	if result := a.DB.First(&request, requestID); result.Error != nil {
+		respondWithError(w, http.StatusNotFound, "Request not found")
+		return
+	}
+
 	// Retrieve the GetIdeb entry from the database
 	var idebEntry GetIdeb
-	if result := a.DB.Where("id = ?", requestID).First(&idebEntry); result.Error != nil {
+	if result := a.DB.Where("nomor_referensi_pengguna = ?", request.NomorReferensiPengguna).First(&idebEntry); result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			respondWithError(w, http.StatusNotFound, "Record not found")
 		} else {

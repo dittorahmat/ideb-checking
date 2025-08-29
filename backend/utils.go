@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -31,6 +32,7 @@ var (
 
 // respondWithError sends a JSON error response with the given message and status code.
 func respondWithError(w http.ResponseWriter, code int, message string) {
+	log.Printf("ERROR: %s", message)
 	respondWithJSON(w, code, APIError{Message: message, Code: code})
 }
 
@@ -42,6 +44,7 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 		return
 	}
 
+	log.Printf("RESPONSE: %s", string(response))
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	if _, err := w.Write(response); err != nil {

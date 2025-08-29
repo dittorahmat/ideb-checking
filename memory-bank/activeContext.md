@@ -1,21 +1,18 @@
 # Active Context
 
 ## 1. Current Work Focus
-The current focus is on improving the backend's configuration management. The application has been refactored to use the `viper` library for loading configuration from `.env` files and environment variables, replacing the previous method that relied on `os.Getenv` and hardcoded defaults in `main.go`. This enhances flexibility and robustness. Backend tests are passing, and UI/UX refinements for the frontend are planned next.
+The current focus is debugging a critical backend error that occurs during form submission. The frontend has been significantly improved and is now correctly handling user input and events, but the backend is returning a `500 Internal Server Error`.
 
 ## 2. Next Steps
-With the configuration refactor complete and backend tests passing, the next phase will focus on UI/UX refinements for the frontend.
+The immediate next step is to reliably capture the panic message from the Go backend. The current logging to a file has been unsuccessful, likely due to log buffering. The plan is to run the server in the foreground to directly capture the `stdout`/`stderr` output when the crash is triggered.
 
 ## 3. Key Decisions & Considerations
-- **Configuration Management:** Adopted `viper` for configuration loading. This provides a standardized way to manage configuration from multiple sources (`.env`, environment variables, defaults) and handles precedence automatically. The `config.yaml` file was removed.
-- **Dependency Injection:** `readFileFunc` remains a dependency injected into the `App` struct, improving testability and reducing reliance on global state.
-- **Structured Error Handling:** `APIError` is in place for consistent error responses, laying the groundwork for future robust error management.
-- **Prioritization:** Focused on `readFileFunc` and error handling refactoring for v0. Other identified areas (model inconsistency, static file serving) are deferred to v1 due to their larger architectural impact.
+- **Frontend Event Handling:** The method for handling events on dynamically loaded content has been completely refactored. Logic has been moved from non-functional inline scripts into the main `script.js`, with a centralized `loadContent` function that now correctly attaches event listeners after injecting HTML. This is a more robust and secure approach.
+- **Debugging Strategy:** Standard logging has failed. The strategy has shifted to direct output capture by running the server process in the foreground. This is a more aggressive but necessary step to diagnose the stubborn bug.
 
 ## 4. Problems Faced
-- **Resolved:** Persistent syntax errors in `handlers_test.go` have been resolved through manual cleanup and careful escaping of string literals. All backend tests are now passing.
-- **Resolved:** Configuration loading was previously basic. It has now been improved using `viper`.
+- **Solved:** The form submission process was completely broken due to a series of frontend issues, including a misunderstanding of how browsers handle scripts in dynamically loaded `innerHTML`. This was a complex issue to diagnose and has been fully resolved.
+- **Active:** The Go backend panics when the `/api/requests` endpoint is hit. The root cause is unknown because the error message has not been successfully captured yet.
 
 ## 5. Immediate Plan to Resolve Problems
-- **Resolved:** The plan to resolve persistent syntax errors in `handlers_test.go` has been successfully executed. All tests are now passing.
-- **Resolved:** The plan to refactor configuration loading using `viper` has been successfully executed.
+- The plan is to run the Go application in the foreground and have the user trigger the 500 error. This should print the panic message directly to the console, allowing for analysis and a fix.

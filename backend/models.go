@@ -34,28 +34,17 @@ func (CorporateRequest) TableName() string {
 	return "getDebtorExactCorporate"
 }
 
-// IndividualRequestPayload represents the expected payload for individual requests
-type IndividualRequestPayload struct {
-	NomorReferensiPengguna         string `json:"nomor_referensi_pengguna"`
-	TujuanPenggunaan               string `json:"tujuan_penggunaan"`
-	JenisIdentitas                 string `json:"jenis_identitas"`
-	NomorIdentitas                 string `json:"nomor_identitas"`
-	PermintaanFasilitasOutstanding bool   `json:"permintaan_fasilitas_outstanding"`
-	SearchType                     string `json:"search_type"`
-}
+// CombinedRequestPayload represents a unified payload for both individual and corporate requests.
+// It's used to unmarshal the incoming JSON in a single pass.
 
-// CorporateRequestPayload represents the expected payload for corporate requests
-type CorporateRequestPayload struct {
+type CombinedRequestPayload struct {
 	NomorReferensiPengguna         string `json:"nomor_referensi_pengguna"`
 	TujuanPenggunaan               string `json:"tujuan_penggunaan"`
 	NomorIdentitas                 string `json:"nomor_identitas"`
 	PermintaanFasilitasOutstanding bool   `json:"permintaan_fasilitas_outstanding"`
 	SearchType                     string `json:"search_type"`
-}
-
-// GenericRequestPayload is used to determine the type of request before unmarshalling to specific DTOs
-type GenericRequestPayload struct {
-	RequestType string `json:"request_type"`
+	RequestType                    string `json:"request_type"`
+	JenisIdentitas                 string `json:"jenis_identitas,omitempty"` // Only for individual
 }
 
 type GetIdeb struct {

@@ -12,7 +12,9 @@
     - A basic user interface with a sidebar and content area is in place.
     - The default landing page after login is now `input-permintaan-badan-usaha.html`.
     - A dummy login form is functional.
-    - The "Input Permintaan IDeb" form can be submitted to the backend, with "internal" search type triggering data ingestion.
+    - The "Input Permintaan IDeb" form submission now correctly triggers backend API calls.
+    - **Event handling for dynamic content has been completely refactored and fixed.**
+    - **A mock loading popup with a 3-second delay has been added to the form submission process for better UX.**
     - The "Daftar Permintaan IDeb" pages (`debitur-individual.html` and `badan-usaha.html`) now fetch and display data from the backend, and the "Lihat Detail" link triggers PDF generation.
 - **Integration:** The frontend is successfully communicating with the backend API for all implemented features.
 - **Testing:** Comprehensive unit and integration tests have been added for the backend Go application, including new unit tests for helper functions. All backend tests are now passing. The testing strategy has been updated in `testing-strategy.md`.
@@ -20,12 +22,12 @@
 ## 2. What's Left to Build
 - **PDF Generation (Phase 3 Complete):** The backend now generates a PDF report with a refined layout and all shareholder details mapped from `input.json`.
 - **Asynchronous OJK Queries:** The mechanism for simulating a "live" asynchronous call to SLIK OJK has been implemented, including a simulated delay and updating request status to "Selesai" with dummy data storage in `get_idebs` table.
-
 - **UI/UX Refinements:** The frontend is basic and can be improved with better styling, loading indicators, and user feedback.
 
 ## 3. Current Status
-- **Status:** v0 Mockup - Backend Refactoring Complete. All tests passing.
-- **Details:** The core functionality of the mockup is implemented. Significant refactoring has been done on the backend for dependency injection and error handling. All backend tests are now passing. The application is running locally with the backend server serving the frontend files.
+- **Status:** Blocked by critical backend bug.
+- **Details:** The application is currently non-functional for its primary purpose of creating new requests. While significant frontend fixes have been implemented, the backend crashes with a 500 Internal Server Error upon form submission. The immediate priority is to diagnose and fix this backend panic.
 
 ## 4. Known Issues
+- **Critical:** The backend returns a `500 Internal Server Error` when the `/api/requests` endpoint is called. The exact cause is unknown as of now because the error message has not been successfully captured from the logs.
 - The `DropTable` linting error is a false positive from `golangci-lint` as the method does not return an error.
