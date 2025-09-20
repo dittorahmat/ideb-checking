@@ -1,0 +1,7 @@
+tunnel: ideb-app
+credentials-file: /home/ditto/.cloudflared/f67c7a00-8f34-4634-af2d-08601b33b53c.json
+
+ingress:
+  - hostname: ideb.your-domain.com
+    service: http://localhost:8080
+  - service: http_status:404
