@@ -23,21 +23,41 @@ function loadContent(page) {
         .then(html => {
             document.getElementById('main-content').innerHTML = html;
 
-            // After loading content, find the form and attach listener
+            // After loading content, find the forms and attach listeners
             if (page === 'input-permintaan-badan-usaha.html') {
-                const form = document.getElementById('ideb-request-form-badan-usaha');
-                if (form) {
-                    form.addEventListener('submit', function(event) {
+                // Handle both similar and exact match forms for corporate requests
+                const similarForm = document.getElementById('ideb-request-form-badan-usaha-similar');
+                const exactForm = document.getElementById('ideb-request-form-badan-usaha-exact');
+                
+                if (similarForm) {
+                    similarForm.addEventListener('submit', function(event) {
                         event.preventDefault();
-                        submitIdebRequest('ideb-request-form-badan-usaha');
+                        submitIdebRequest('ideb-request-form-badan-usaha-similar');
+                    });
+                }
+                
+                if (exactForm) {
+                    exactForm.addEventListener('submit', function(event) {
+                        event.preventDefault();
+                        submitIdebRequest('ideb-request-form-badan-usaha-exact');
                     });
                 }
             } else if (page === 'input-permintaan-individual.html') {
-                const form = document.getElementById('ideb-request-form-individual');
-                if (form) {
-                    form.addEventListener('submit', function(event) {
+                // Handle both similar and exact match forms for individual requests
+                const similarForm = document.getElementById('ideb-request-form-individual-similar');
+                const exactForm = document.getElementById('ideb-request-form-individual-exact');
+                
+                if (similarForm) {
+                    similarForm.addEventListener('submit', function(event) {
                         event.preventDefault();
-                        submitIdebRequest('ideb-request-form-individual');
+                        submitIdebRequest('ideb-request-form-individual-similar');
+                    });
+                }
+                
+                if (exactForm) {
+                    exactForm.addEventListener('submit', function(event) {
+                        event.preventDefault();
+                        submitIdebRequest('ideb-request-form-individual-exact');
                     });
                 }
             } else if (page === 'debitur-individual.html' || page === 'badan-usaha.html') {
@@ -84,20 +104,47 @@ function submitIdebRequest(formId) {
         return;
     }
 
+    // For Similar Match Search, just show an alert and return
+    if (formId.includes('similar')) {
+        alert('Similar Match Search is not implemented yet.');
+        return;
+    }
+
+    // Only proceed with the mockup functionality for Exact Match Search
     showLoadingPopup();
 
-    const formData = {
-        nomor_referensi_pengguna: form.querySelector('[id^="nomor_referensi_pengguna"]').value,
-        tujuan_penggunaan: form.querySelector('[id^="tujuan_penggunaan"]').value,
-        nomor_identitas: form.querySelector('[id^="nomor_identitas"]').value,
-        permintaan_fasilitas_outstanding: form.querySelector('[id^="permintaan_fasilitas_outstanding"]').checked,
-        search_type: form.querySelector('input[name^="search_type"]:checked').value,
-        request_type: formId.includes("individual") ? "individual" : "corporate"
-    };
-
-    // Add jenis_identitas only for individual requests
-    if (formId.includes("individual")) {
-        formData.jenis_identitas = form.querySelector('[id^="jenis_identitas"]').value;
+    let formData = {};
+    
+    // Handle different form structures
+    if (formId === 'ideb-request-form-individual-similar' || formId === 'ideb-request-form-individual-exact') {
+        // Individual forms (tabbed)
+        const isSimilar = formId.includes('similar');
+        const suffix = isSimilar ? '_individual_similar' : '_individual_exact';
+        
+        formData = {
+            nomor_referensi_pengguna: form.querySelector('#nomor_referensi_pengguna' + suffix).value,
+            tujuan_penggunaan: form.querySelector('#tujuan_penggunaan' + suffix).value,
+            nomor_identitas: form.querySelector('#nomor_identitas' + suffix).value,
+            permintaan_fasilitas_outstanding: form.querySelector('#permintaan_fasilitas_outstanding' + suffix) ? 
+                form.querySelector('#permintaan_fasilitas_outstanding' + suffix).checked : false,
+            search_type: form.querySelector('input[name="search_type' + suffix + '"]:checked').value,
+            request_type: "individual",
+            jenis_identitas: form.querySelector('#jenis_identitas' + suffix).value
+        };
+    } else if (formId === 'ideb-request-form-badan-usaha-similar' || formId === 'ideb-request-form-badan-usaha-exact') {
+        // Corporate forms (tabbed)
+        const isSimilar = formId.includes('similar');
+        const suffix = isSimilar ? '_badan_usaha_similar' : '_badan_usaha_exact';
+        
+        formData = {
+            nomor_referensi_pengguna: form.querySelector('#nomor_referensi_pengguna' + suffix).value,
+            tujuan_penggunaan: form.querySelector('#tujuan_penggunaan' + suffix).value,
+            nomor_identitas: form.querySelector('#nomor_identitas' + suffix).value,
+            permintaan_fasilitas_outstanding: form.querySelector('#permintaan_fasilitas_outstanding' + suffix) ? 
+                form.querySelector('#permintaan_fasilitas_outstanding' + suffix).checked : false,
+            search_type: form.querySelector('input[name="search_type' + suffix + '"]:checked').value,
+            request_type: "corporate"
+        };
     }
 
     // Simulate a 3-second delay

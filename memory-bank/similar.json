@@ -1,0 +1,44 @@
+{
+  "code": "200",
+  "status": "success",
+  "remark": "Berhasil",
+  "inquiry_code": "0c00098f-f468-44b9-bac0-c78d36cd2503",
+  "data": [
+    {
+      "kode_jenis_pelapor": "0101",
+      "kode_pelapor": "002",
+      "nama_debitur": "HANLA WASHING",
+      "kode_jenis_identitas": "3",
+      "nomor_identitas": "210376083503000",
+      "tempat_pendirian": "JAKARTA",
+      "tanggal_pendirian": "20070530",
+      "alamat_debitur": "KAWASAN BERIKAT RUKTI MUKTI BAWANA BLOK A NO 2 JL RAYA SEMARANG KENDAL KM 12 TUGU",
+      "kode_dati2": "004",
+      "kode_pos": "50153"
+    },
+    {
+      "kode_jenis_pelapor": "0101",
+      "kode_pelapor": "009",
+      "nama_debitur": "HANLA WASHING",
+      "kode_jenis_identitas": "3",
+      "nomor_identitas": "210376083503000",
+      "tempat_pendirian": "JAKARTA",
+      "tanggal_pendirian": "20070530",
+      "alamat_debitur": "KAWASAN BERIKAT RUKTI MUKTI BAWANA BLOK A NO 2 JL RAYA SEMARANG KENDAL KM 12 TUGU",
+      "kode_dati2": "004",
+      "kode_pos": "50153"
+    },
+    {
+      "kode_jenis_pelapor": "0101",
+      "kode_pelapor": "022",
+      "nama_debitur": "HANLA WASHING",
+      "kode_jenis_identitas": "3",
+      "nomor_identitas": "210376083503000",
+      "tempat_pendirian": "JAKARTA",
+      "tanggal_pendirian": "20070530",
+      "alamat_debitur": "KAWASAN BERIKAT RUKTI MUKTI BAWANA BLOK A NO 2 JL RAYA SEMARANG KENDAL KM 12 TUGU",
+      "kode_dati2": "004",
+      "kode_pos": "50153"
+    }
+  ]
+}

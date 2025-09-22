@@ -16,4 +16,5 @@ func (a *App) RegisterRoutes() {
 	a.Router.PathPrefix("/").Handler(fs)
 
 	a.Router.Use(CORSMiddleware)
+	a.Router.Use(a.AuthMiddleware)
 }

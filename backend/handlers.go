@@ -129,8 +129,17 @@ func (a *App) handleInternalSearch(req interface{}) error {
 		nomorIdentitas = inputData.Data.Corporate.CorporateDebtors[0].TaxId
 	}
 
+	// Get the nomor_referensi_pengguna from the request object
+	var nomorReferensiPengguna string
+	switch r := req.(type) {
+	case *Request:
+		nomorReferensiPengguna = r.NomorReferensiPengguna
+	case *CorporateRequest:
+		nomorReferensiPengguna = r.NomorReferensiPengguna
+	}
+
 	getIdebEntry := GetIdeb{
-		NomorReferensiPengguna: inputData.Data.Header.UserReferenceCode,
+		NomorReferensiPengguna: nomorReferensiPengguna, // Use the request's nomor_referensi_pengguna
 		NomorIdentitas:         nomorIdentitas,
 		Data:                   string(inputData.RawData),
 	}
@@ -199,7 +208,7 @@ func (a *App) handleLiveSearch(req interface{}) error {
 				}
 
 				getIdebEntry := GetIdeb{
-					NomorReferensiPengguna: inputData.Data.Header.UserReferenceCode,
+					NomorReferensiPengguna: updatedReq.NomorReferensiPengguna, // Use the request's nomor_referensi_pengguna
 					NomorIdentitas:         nomorIdentitas,
 					Data:                   string(inputData.RawData),
 				}
@@ -232,7 +241,7 @@ func (a *App) handleLiveSearch(req interface{}) error {
 				}
 
 				getIdebEntry := GetIdeb{
-					NomorReferensiPengguna: inputData.Data.Header.UserReferenceCode,
+					NomorReferensiPengguna: updatedReq.NomorReferensiPengguna, // Use the request's nomor_referensi_pengguna
 					NomorIdentitas:         nomorIdentitas,
 					Data:                   string(inputData.RawData),
 				}
