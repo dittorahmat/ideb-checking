@@ -9,7 +9,9 @@ func (a *App) RegisterRoutes() {
 	a.Router.HandleFunc("/api/login", a.loginHandler).Methods("POST", "OPTIONS")
 	a.Router.HandleFunc("/api/requests", a.createRequestHandler).Methods("POST", "OPTIONS")
 	a.Router.HandleFunc("/api/requests/{type}", a.getRequestsHandler).Methods("GET", "OPTIONS")
+	a.Router.HandleFunc("/api/similar-search", a.handleSimilarSearch).Methods("POST", "OPTIONS")
 	a.Router.HandleFunc("/api/generate-pdf", a.generatePDFHandler).Methods("GET", "OPTIONS")
+a.Router.HandleFunc("/api/generate-similar-pdf", a.handleSimilarSearchPDF).Methods("POST", "OPTIONS")
 
 	// Serve static files from the "frontend" directory directly from the root
 	fs := http.FileServer(http.Dir("../frontend"))

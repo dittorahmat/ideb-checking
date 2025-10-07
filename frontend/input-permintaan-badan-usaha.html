@@ -36,7 +36,22 @@
             
             <div class="mb-3">
                 <label for="nomor_identitas_badan_usaha_similar" class="form-label">Nomor Identitas Badan Usaha</label>
-                <input type="text" class="form-control" id="nomor_identitas_badan_usaha_similar" required>
+                <input type="text" class="form-control" id="nomor_identitas_badan_usaha_similar">
+            </div>
+            
+            <div class="mb-3">
+                <label for="nama_badan_usaha_similar" class="form-label">Nama Badan Usaha</label>
+                <input type="text" class="form-control" id="nama_badan_usaha_similar" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="tempat_pendirian_similar" class="form-label">Tempat Pendirian</label>
+                <input type="text" class="form-control" id="tempat_pendirian_similar">
+            </div>
+            
+            <div class="mb-3">
+                <label for="tanggal_pendirian_similar" class="form-label">Tanggal Pendirian</label>
+                <input type="date" class="form-control" id="tanggal_pendirian_similar">
             </div>
             
             <div class="mb-3 form-check">
@@ -112,3 +127,31 @@
         </form>
     </div>
 </div>
+
+<script>
+// Add event listeners for conditional fields in Similar Match Search
+document.addEventListener('DOMContentLoaded', function() {
+    // Get the similar match form
+    const similarForm = document.getElementById('ideb-request-form-badan-usaha-similar');
+    
+    if (similarForm) {
+        // Get the input fields
+        const nomorIdentitas = document.getElementById('nomor_identitas_badan_usaha_similar');
+        const tempatPendirian = document.getElementById('tempat_pendirian_similar');
+        const tanggalPendirian = document.getElementById('tanggal_pendirian_similar');
+        const namaBadanUsaha = document.getElementById('nama_badan_usaha_similar');
+        
+        // Add form submit validation
+        similarForm.addEventListener('submit', function(e) {
+            const hasNamaBadanUsaha = namaBadanUsaha.value.trim() !== '';
+            
+            // Nama Badan Usaha is mandatory
+            if (!hasNamaBadanUsaha) {
+                e.preventDefault();
+                alert('Nama Badan Usaha wajib diisi');
+                return;
+            }
+        });
+    }
+});
+</script>

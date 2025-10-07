@@ -15,3 +15,14 @@
     </tbody>
 </table>
 </div>
+
+<script>
+// Check if there are similar search results in sessionStorage when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Check for similar search results
+    if (sessionStorage.getItem('similarSearchResults')) {
+        // Display the popup with similar search results
+        displaySimilarResultsPopup();
+    }
+});
+</script>

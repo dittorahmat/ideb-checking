@@ -18,6 +18,28 @@ func (a *App) loginHandler(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, map[string]string{"status": "success"})
 }
 
+// handleSimilarSearch handles the similar search requests for corporate entities
+func (a *App) handleSimilarSearch(w http.ResponseWriter, r *http.Request) {
+	// Read the similar.json file
+	similarData, err := a.ReadFileFunc("../memory-bank/similar.json")
+	if err != nil {
+		log.Printf("Error reading similar.json: %v", err)
+		respondWithError(w, http.StatusInternalServerError, "Error reading similar data")
+		return
+	}
+
+	// Parse the JSON data
+	var inputData interface{}
+	if err := json.Unmarshal(similarData, &inputData); err != nil {
+		log.Printf("Error parsing similar.json: %v", err)
+		respondWithError(w, http.StatusInternalServerError, "Error parsing similar data")
+		return
+	}
+
+	// Respond with the data
+	respondWithJSON(w, http.StatusOK, inputData)
+}
+
 func (a *App) getRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	requestType, ok := vars["type"]
@@ -325,6 +347,109 @@ func (a *App) generatePDFHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", "attachment; filename=\"ideb_report.pdf\"")
+	_, err = w.Write(pdfBytes)
+	if err != nil {
+		log.Printf("Error writing PDF to response: %v", err)
+	}
+}
+
+// handleSimilarSearchPDF generates a PDF from the similar search result data directly
+func (a *App) handleSimilarSearchPDF(w http.ResponseWriter, r *http.Request) {
+	// Parse the similar search result from the request body
+	var result SimilarSearchResult
+	if err := json.NewDecoder(r.Body).Decode(&result); err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	// Create InputJSON structure from the similar search result
+	// For this mockup, we'll create a minimal InputJSON based on the result
+	inputData := &InputJSON{
+		Code:   "200",
+		Status: "success",
+		Remark: "Berhasil",
+		Data: struct {
+			Header    Header    `json:"header"`
+			Corporate Corporate `json:"corporate"`
+		}{
+			Header: Header{
+				UserReferenceCode:        result.NomorIdentitas, // Using nomor identitas as reference
+				ResultDate:               time.Now().Format("20060102"),
+				InquiryId:                result.KodePelapor,
+				InquiryUserId:            "user123", // Default value
+				InquiryCreatedBy:         "system",  // Default value
+				InquiryMemberCode:        result.KodePelapor,
+				InquiryOfficeCode:        "001", // Default value
+				ReportRequestPurposeCode: "01",  // Default value
+				InquiryDate:              time.Now().Format("20060102"),
+				DataSetTotal:             "1",   // Since we're dealing with single results
+				DataSetNumber:            "1",   // Default value
+			},
+			Corporate: Corporate{
+				ReportNumber:        "RPT001", // Default value
+				LatestDataYearMonth: time.Now().Format("200601"),
+				RequestDate:         time.Now().Format("20060102"),
+				CorporateKeyWord: struct {
+					IdentityNumberName string `json:"identityNumberName"`
+					TestPlace          string `json:"testPlace"`
+					RecordStatusFlag   string `json:"recordStatusFlag"`
+				}{
+					IdentityNumberName: result.NamaDebitur,
+					TestPlace:          result.TempatPendirian,
+					RecordStatusFlag:   "A", // Default value
+				},
+				CorporateDebtors: []CorporateDebtor{
+					{
+						IdentityNumberName: result.NamaDebitur,
+						FullName:           result.NamaDebitur,
+						TaxId:              result.NomorIdentitas,
+						CompanyType:        result.KodeJenisIdentitas, // Using this field as company type
+						CompanyTypeDesc:    "PT",                    // Default value
+						EstPlace:           result.TempatPendirian,
+						EstCertNo:          "",                      // Default value
+						EstCertDate:        result.TanggalPendirian,
+						Member:             result.KodePelapor,
+						MemberDesc:         "Default Member Desc", // Default value
+						UpdatedDatetime:    time.Now().Format("2006-01-02 15:04:05"),
+						Address:            result.AlamatDebitur,
+						SubDistrict:        "", // Default value
+						District:           "", // Default value
+						City:               "", // Default value
+						CityDesc:           "", // Default value
+						PostalCode:         result.KodePos,
+						Country:            "ID", // Default value
+						CountryDesc:        "Indonesia", // Default value
+						LatestAddCertNo:    "",          // Default value
+						LatestAddCertDate:  result.TanggalPendirian,
+						EconomicSector:     "", // Default value
+						EconomicSectorDesc: "", // Default value
+						RatingDate:         "", // Default value
+						CreatedDatetime:    time.Now().Format("2006-01-02 15:04:05"),
+						GoPublicFlag:       "0", // Default value
+						OfficisSharehldrsGroups: []OfficisSharehldrsGroup{}, // Empty for now
+					},
+				},
+			},
+		},
+	}
+
+	// Marshal the structure to get the raw data
+	rawData, err := json.Marshal(inputData)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error creating input data")
+		return
+	}
+	inputData.RawData = rawData
+
+	// Generate PDF using the input data
+	pdfBytes, err := generateIdebPDF(inputData)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error generating PDF")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", "attachment; filename=\"similar_search_result.pdf\"")
 	_, err = w.Write(pdfBytes)
 	if err != nil {
 		log.Printf("Error writing PDF to response: %v", err)

@@ -148,3 +148,17 @@ type OfficisSharehldrs struct {
 	ShareholderStatusDesc string `json:"shareholderStatusDesc"`
 	SubDistrict           string `json:"subDistrict"`
 }
+
+// Structs for similar search results
+type SimilarSearchResult struct {
+	KodeJenisPelapor string `json:"kode_jenis_pelapor"`
+	KodePelapor      string `json:"kode_pelapor"`
+	NamaDebitur      string `json:"nama_debitur"`
+	KodeJenisIdentitas string `json:"kode_jenis_identitas"`
+	NomorIdentitas   string `json:"nomor_identitas"`
+	TempatPendirian  string `json:"tempat_pendirian"`
+	TanggalPendirian string `json:"tanggal_pendirian"`
+	AlamatDebitur    string `json:"alamat_debitur"`
+	KodeDati2        string `json:"kode_dati2"`
+	KodePos          string `json:"kode_pos"`
+}
